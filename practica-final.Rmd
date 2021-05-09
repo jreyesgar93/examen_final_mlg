@@ -76,13 +76,21 @@ Los datos contenidos en `MASS` (eagles) son registros intento de robo entre
 águilas blancas en el estado de Washington. Ve la ayuda para mayor detalle en el
 conjunto de datos:
 ```{r}
+library(MASS)
+data(eagles)
+eagles %>%head()
 
-# library(rethinking)
-# data(eagles)
-# eagles %>% 
-#     head()
-
+eagles$group<-seq(1:8)
+eagles
 ```
+
+Variables: 
+Y - number of successful attempts
+n - Total number of attempts
+p - Size of pirating eagle (Large or Small)
+A - Age of priating eagle (Immagure or Adult)
+V - Size of victim eagle (Large or Small)
+
 
 Mientras un águila se alimenta, a veces otra se abalanza y trata de robar el
 salmón. Llamemos al águila que se está alimentando la "víctima" y al ladrón el
@@ -105,6 +113,16 @@ grande o no, $V$ es una variable ficticia que indica si la víctima tenía o no 
 tamaño corporal grande, y finalmente $A$ es una variable ficticia que indica si
 el pirata era o no un adulto. Ajusta el modelo anterior a los datos de las
 águilas con la herramienta de tu preferencia e interpreta las estimaciones. 
+```{r}
+
+model<-stan_glm(cbind(y,n-y)~P+V+A,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+
+summary(model)
+```
 
 (b) Luego grafica las predicciones posteriores. Para esto calcula y muestra
 tanto: 1) la predicción de la probabilidad de éxito y su intervalo de
@@ -112,10 +130,100 @@ credibilidad de 89\% para cada observación en los datos; como: 2) el número de
 éxitos y su intervalo del 89\%. ¿Qué información proporciona cada tipo de
 predicción posterior?
 
+
+```{r}
+eagles$group<-seq(1:8)
+#1)
+
+post_epred<-posterior_epred(model)
+posterior_interval(post_epred,prob=.89)
+ppc_stat_grouped( y = eagles$y/eagles$n,yrep =post_epred,group = eagles$group,freq = TRUE , size = 100)
+
+
+#2)
+post_pred<-posterior_predict(model)
+posterior_interval(post_pred,prob=.89)
+ppc_stat_grouped( y = eagles$y,yrep =post_pred,group = eagles$group,freq = TRUE , size = 100)
+
+```
+
 (c) Ahora intenta mejorar el modelo. Considera una interacción entre el tamaño y
 edad de los piratas. Compara la capacidad predictiva de los modelos. Interpreta
 los resultados.
 
+
+```{r}
+model2<-stan_glm(cbind(y,n-y)~P+V+A+P:V+P:A+A:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+
+summary(model2)
+
+model3<-stan_glm(cbind(y,n-y)~P+V+A+P:A+A:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+
+summary(model3)
+
+model4<-stan_glm(cbind(y,n-y)~P+V+A+P:V+A:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+
+summary(model4)
+
+model4<-stan_glm(cbind(y,n-y)~P+V+A+P:A+A:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+
+summary(model4)
+
+
+model5<-stan_glm(cbind(y,n-y)~P+V+A+P:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+
+summary(model5)
+
+model6<-stan_glm(cbind(y,n-y)~P+V+A+P:A,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+
+summary(model6)
+
+
+model7<-stan_glm(cbind(y,n-y)~P+V+A+V:A,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+
+summary(model7)
+
+
+
+loo1<-loo(model)
+loo2<-loo(model2)
+loo3<-loo(model3)
+loo4<-loo(model4)
+loo5<-loo(model5)
+loo6<-loo(model6)
+loo7<-loo(model7)
+
+loo_compare(loo1,loo2,loo3,loo4,loo5,loo6,loo7)
+
+```
 # Extensiones de modelos de conteo: huracanes
 
 En 2014, se publicó un artículo titulado [*"Female hurricanes are deadlier than
