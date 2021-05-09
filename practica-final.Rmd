@@ -1,0 +1,245 @@
+---
+title: "Práctica Final - Primavera 2021"
+author: Alfredo Garbuno Iñigo
+output: html_document
+---
+
+**Entrega:** 
+
+Enviar por correo electrónico una carpeta comprimida
+(`equipo-xx.zip`) que incluya datos y codigo de solución a mas tardar el 18 de
+Mayo antes de las 11:59pm (medianoche). El asunto deberá ser `[MB - 2021]
+Final Equipo XX`, donde  reemplazarás `XX` con el codigo de tu equipo. No se
+aceptarán entregas extemporáneas. Será mejor entregar un examen resuelto
+parcialmente, que no entregar nada. 
+
+**Instrucciones:**
+  
+* Tus respuestas deben ser claras y debes explicar los resultados, incluye
+también tus procedimientos/código de manera ordenada, y el código comentado.
+
+* Se evaluará la presentación de resultados (calidad de las gráficas, tablas,
+...).
+
+* Las sesión del Martes 11 de Mayo será destinada a responder dudas del
+examen. Para esto se reservará una media hora para dudas (dependerá de la agenda
+cuál será el momento mas oportuno para abrir el espacio). 
+
+* Se podrá usar el foro de discusión para realizar preguntas y afinar detalles 
+que no queden claros. 
+
+* No pueden compartir soluciones entre diferentes equipos.
+
+* Al entregar este examen afirmas que el trabajo se realizó sólo con tu
+compañeros de equipo. El material que utilizaste para apoyarte consistió de las
+notas en clase (pdfs en Canvas), el codigo fuente de las notas en el repositorio
+de Github.
+
+* Al entregar estás dando tu consentimiento para que bajo sospecha y suficiente
+evidencia de copia se anule tu evaluación.
+
+* La carpeta comprimida deberá incluir la resolución del examen también en
+formato `.html`. La evaluación será completamente sobre el `html` y el código
+fuente será utilizado para verificar detalles adicionales. Si el `html` no
+incluye alguna sección de la evaluación se tomará dicha sección como **no
+entregado**.
+
+**Ponderación:**
+
+El examen está compuesto por cuatro apartados cuyos pesos son los siguientes:  
+- Águilas    (15\%),  
+- Huracanes  (45\%),  
+- Omega-3    (15\%),  
+- Vacas      (25\%).  
+
+```{r setup, include=FALSE}
+
+library(tidymodels)
+library(tidyverse)
+library(cmdstanr)
+library(rstanarm)
+library(bayesplot)
+library(loo)
+
+library(patchwork)
+library(scales)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning=FALSE, 
+                      fig.align = 'center', fig.width = 5, fig.height=3, cache = TRUE)
+comma <- function(x) format(x, digits = 2, big.mark = ",")
+theme_set(theme_linedraw())
+```
+
+
+# Modelos de conteo: Águilas
+
+Los datos contenidos en `MASS` (eagles) son registros intento de robo entre
+águilas blancas en el estado de Washington. Ve la ayuda para mayor detalle en el
+conjunto de datos:
+```{r}
+
+# library(rethinking)
+# data(eagles)
+# eagles %>% 
+#     head()
+
+```
+
+Mientras un águila se alimenta, a veces otra se abalanza y trata de robar el
+salmón. Llamemos al águila que se está alimentando la "víctima" y al ladrón el
+"pirata". Utiliza los datos disponibles para construir un GLM binomial para
+predecir los intentos exitosos de piratería.
+
+(a) Considera el modelo:
+
+$$
+\begin{align}
+y_i &\sim \textsf{Binomial}(n_i, p_i) \,,\\
+\textsf{logit}(p_i) &= \alpha + \beta_P P_i + \beta_V V_i + \beta_A A_i\,,\\
+\alpha &\sim \textsf{N}(0, 1.5) \,,\\
+\beta_P, \beta_V, \beta_A &\sim \mathsf{N}(0, 0.5) \,,
+\end{align}
+$$
+donde $y$ es el número de intentos exitosos, $n$ es el número total de intentos,
+$P$ es una variable ficticia que indica si el pirata tenía un tamaño corporal
+grande o no, $V$ es una variable ficticia que indica si la víctima tenía o no un
+tamaño corporal grande, y finalmente $A$ es una variable ficticia que indica si
+el pirata era o no un adulto. Ajusta el modelo anterior a los datos de las
+águilas con la herramienta de tu preferencia e interpreta las estimaciones. 
+
+(b) Luego grafica las predicciones posteriores. Para esto calcula y muestra
+tanto: 1) la predicción de la probabilidad de éxito y su intervalo de
+credibilidad de 89\% para cada observación en los datos; como: 2) el número de
+éxitos y su intervalo del 89\%. ¿Qué información proporciona cada tipo de
+predicción posterior?
+
+(c) Ahora intenta mejorar el modelo. Considera una interacción entre el tamaño y
+edad de los piratas. Compara la capacidad predictiva de los modelos. Interpreta
+los resultados.
+
+# Extensiones de modelos de conteo: huracanes
+
+En 2014, se publicó un artículo titulado [*"Female hurricanes are deadlier than
+male hurricanes"*](https://www.pnas.org/content/111/24/8782). Como sugiere el
+título, el documento afirmó que los huracanes con nombres femeninos han causado
+una mayor pérdida de vidas, y la explicación que se da es que las personas
+inconscientemente califican a los huracanes femeninos como menos peligrosos y,
+por lo tanto, es menos probable que se necesite evacuar. Los estadísticos
+criticaron duramente el artículo después de su publicación. En esta sección,
+explorarás los datos completos utilizados en el artículo y considerarás la
+hipótesis que los huracanes con nombres femeninos son más letales. Carga los
+datos con:
+
+
+```{r}
+# data(Hurricanes)
+# Hurricanes %>% 
+#     head()
+```
+
+Familiarízate con las columnas inspeccionando la ayuda `?Hurricanes`. En este
+problema, te concentrarás en predecir muertes usando la feminidad de cada nombre
+del huracán. 
+
+a) Ajustaremos e interpretaremos el modelo más simple posible, un
+modelo de Poisson de muertes utilizando la feminidad como predictor. Puede
+utilizar quap o ulam. Compara el modelo a un modelo de muertes Poisson con sólo
+intercepto. ¿Qué tan fuerte es la asociación entre la feminidad del nombre y el
+número de muertes? ¿Qué tormentas ajustan bien con el modelo? ¿Qué tormentas son
+las que no son tan fáciles de predecir?
+
+b) Los conteo casi siempre están demasiado dispersos en relación con una
+distribución Poisson. Así que ajusta un Modelo gamma-Poisson (también conocido
+como binomial-negativo) para predecir muertes utilizando la feminidad. Demuestra
+que el modelo con sobre-dispersión ya no muestra un resultado positivo tan
+preciso entre feminidad y muerte, con un intervalo de 89% que se superpone cero.
+¿Puedes explicar por qué la asociación disminuyó?
+
+c) En los datos, hay dos medidas del potencial de letalidad de un huracán:
+`damage_norm` y `min_pressure`. Consulta `?Hurricanes`. Hace algo de sentido
+imaginar que la feminidad de un nombre importa más cuando el huracán es en sí
+mismo mortal. Esto implica una interacción entre la feminidad y posiblemente una
+o las dos `damage_norm` y `min_pressure`. Ajusta una serie de modelos evaluando
+estas interacciones. Interpreta y compara los modelos. Al interpretar las
+estimaciones, te puede ayudar a generar predicciones que contrasten los
+huracanes con nombres masculinos y femeninos. ¿Son probables los coeficientes?
+
+d) En el artículo original sobre huracanes, se utilizó directamente el daño por
+tormenta (`damage_norm`). Esta suposición implica que la mortalidad aumenta
+exponencialmente con aumento lineal en la fuerza de la tormenta. Esto debido a
+que en regresión Poisson usamos un enlace logarítmico. Entonces, vale la pena
+explorar una hipótesis alternativa: que el logaritmo de la fuerza de la tormenta
+es lo que importa. Explora esto usando el logaritmo de `damage_norm` como un
+predictor. Usando la mejor estructura de modelo del inciso anterior, compara un
+modelo que usa `log(damage_norm)` a un modelo que usa `damage_norm`
+directamente. Compara la capacidad predictiva, así como sus predicciones
+implícitas. ¿Qué es lo que concluyes?
+
+# Inferencia Causal: experimentos aleatorizados
+
+Distribuciones muestrales bajo aleatorización: Utilice la covariable y el
+potencial de salida (*potential outcome*) de los datos en la tabla 18.1 del
+libro *Regresion and Other Stories*. Abajo viene una versión simplificada
+(aunque hacen falta un par más, incorporalas):
+
+```{r}
+
+omega <- tibble(female = factor(rep(rep(c(1,0), each = 2), 2)), 
+       age    = rep(c(4,5,6,7), each = 2) * 10, 
+       treatment = factor(rep(c(0,1), each = 4)), 
+       outcome = rep(c(140, 150, 155, 160), each = 2))
+
+omega %>% head()
+
+```
+
+como punto de partida para considerar distribuciones de aleatorización de cuatro
+diseños diferentes mediante la creación de simulaciones en `R`.
+
+Comenta sobre el sesgo relativo y la eficiencia para cada uno de los siguientes
+diseños:
+• Diseño completamente aleatorizado,
+• Diseño aleatorio usando bloques por los cuatro participantes mayores frente a
+los cuatro más jóvenes,
+• Diseño de pares combinados,
+
+utilizando cada una de las siguientes estimaciones:
+• Diferencia de medias,
+• Regresión del indicador de tratamiento y la edad,
+• Regresión del indicador de tratamiento, edad y sexo,
+• Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento
+$\times$ sexo.
+
+# Inferencia Causal y Modelos de Regresión: vacas 
+
+*Aleatorización desordenada*: los datos de `vacas.txt` contiene datos de un
+experimento que se llevó a cabo con 50 vacas para estimar el efecto de un
+complemento alimenticio en 6 resultados relacionados con la cantidad de grasa
+láctea producida por cada vaca. Se consideraron cuatro dietas (tratamientos),
+correspondientes a diferentes niveles del complemento, y se registraron tres
+variables antes de la asignación del tratamiento: número de lactancia
+(temporadas de lactancia), edad y peso inicial de la vaca.
+
+Las vacas se asignaron inicialmente a tratamientos completamente al azar, y
+después se revisaron las distribuciones de las tres covariables para verificar
+el equilibrio a lo largo de los grupos de tratamiento. Se probaron varias
+aleatorizaciones, y la que produjo el "mejor" equilibrio con respecto a las tres
+covariables fue la que se escogió. El tratamiento depende sólo de las
+covariables completamente observadas y no de las no registradas como el aspecto
+físico de las vacas o los momentos en los que vacas entraron en el estudio. Esto
+es porque las decisiones de volver a aleatorizar no son explicados.
+Consideraremos diferentes estimaciones del efecto del complemento en la grasa
+láctea media diaria producida.
+
+a) Considera la regresión massimple de la grasa láctea media diaria con el nivel
+de complemento. Calcula el efecto del tratamiento estimado (coeficiente de
+regresión) y el error estándar, y explica por qué este no es un análisis
+completamente apropiado dada la aleatorización utilizada.
+
+b) Agrega más predictores al modelo. Explica el razonamiento para la elección de
+covariables en el modelo. Compare el efecto estimado del tratamiento con el
+resultado de (a).
+
+c) Repite (b), esta vez considerando el nivel del complemento como un predictor
+categórico con cuatro niveles. Haga una gráfica que muestre la estimación (y el
+error estándar) del efecto del tratamiento en cada nivel, y también mostrando la
+inferencia del modelo ajustado en (b).
