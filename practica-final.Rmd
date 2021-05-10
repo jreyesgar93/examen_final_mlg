@@ -1,88 +1,92 @@
 ---
-title: "Práctica Final - Primavera 2021"
-author: Alfredo Garbuno Iñigo
-output: html_document
+title: "Modelación Bayesiana: Práctica Final"
+output:
+  html_document:
+    highlight: tango
+    number_sections: yes
+    code_folding: hide
+    theme: paper
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    df_print: paged
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
+    toc_depth: '2'
 ---
 
-**Entrega:** 
+<div align='justify'>
 
-Enviar por correo electrónico una carpeta comprimida
-(`equipo-xx.zip`) que incluya datos y codigo de solución a mas tardar el 18 de
-Mayo antes de las 11:59pm (medianoche). El asunto deberá ser `[MB - 2021]
-Final Equipo XX`, donde  reemplazarás `XX` con el codigo de tu equipo. No se
-aceptarán entregas extemporáneas. Será mejor entregar un examen resuelto
-parcialmente, que no entregar nada. 
 
-**Instrucciones:**
-  
-* Tus respuestas deben ser claras y debes explicar los resultados, incluye
-también tus procedimientos/código de manera ordenada, y el código comentado.
-
-* Se evaluará la presentación de resultados (calidad de las gráficas, tablas,
-...).
-
-* Las sesión del Martes 11 de Mayo será destinada a responder dudas del
-examen. Para esto se reservará una media hora para dudas (dependerá de la agenda
-cuál será el momento mas oportuno para abrir el espacio). 
-
-* Se podrá usar el foro de discusión para realizar preguntas y afinar detalles 
-que no queden claros. 
-
-* No pueden compartir soluciones entre diferentes equipos.
-
-* Al entregar este examen afirmas que el trabajo se realizó sólo con tu
-compañeros de equipo. El material que utilizaste para apoyarte consistió de las
-notas en clase (pdfs en Canvas), el codigo fuente de las notas en el repositorio
-de Github.
-
-* Al entregar estás dando tu consentimiento para que bajo sospecha y suficiente
-evidencia de copia se anule tu evaluación.
-
-* La carpeta comprimida deberá incluir la resolución del examen también en
-formato `.html`. La evaluación será completamente sobre el `html` y el código
-fuente será utilizado para verificar detalles adicionales. Si el `html` no
-incluye alguna sección de la evaluación se tomará dicha sección como **no
-entregado**.
-
-**Ponderación:**
-
-El examen está compuesto por cuatro apartados cuyos pesos son los siguientes:  
-- Águilas    (15\%),  
-- Huracanes  (45\%),  
-- Omega-3    (15\%),  
-- Vacas      (25\%).  
 
 ```{r setup, include=FALSE}
 
-library(tidymodels)
-library(tidyverse)
-library(cmdstanr)
-library(rstanarm)
-library(bayesplot)
-library(loo)
 
-library(patchwork)
-library(scales)
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning=FALSE, 
-                      fig.align = 'center', fig.width = 5, fig.height=3, cache = TRUE)
+# Set up
+packages <- c("tidymodels", 
+              "tidyverse",
+              "cmdstanr",
+              "rstanarm",
+              "bayesplot",
+              "loo",
+              "patchwork",
+              "devtools", 
+              "scales",
+              "coda",
+              "mvtnorm",
+              "rethinking",
+              "MASS",
+              "experiment",
+              "magrittr",
+              "umap",
+              "vtable",
+              "tidybayes",
+              "modelr",
+              "arm")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+cbp5 <- c("#d0e1f9", "#84c1ff", "#3b7dd8", "#4d648d", "#283655")
+# Packages loading
+lapply(packages, 
+       library, 
+       character.only = TRUE)
+
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning=FALSE, 
+                      fig.align = 'center',
+                      fig.width = 5,
+                      fig.height=3, 
+                      cache = TRUE)
 comma <- function(x) format(x, digits = 2, big.mark = ",")
 theme_set(theme_linedraw())
+seed <- 333
+rstan_options (auto_write=TRUE)
+options (mc.cores=parallel::detectCores ()) 
 ```
 
 
 # Modelos de conteo: Águilas
 
-Los datos contenidos en `MASS` (eagles) son registros intento de robo entre
+Los datos contenidos en `MASS` (eagles) son registros de intento de robo de alimentación entre
 águilas blancas en el estado de Washington. Ve la ayuda para mayor detalle en el
 conjunto de datos:
-```{r}
 
-# library(rethinking)
-# data(eagles)
-# eagles %>% 
-#     head()
 
+```{r paged.print=TRUE}
+data(eagles)
+eagles %>% 
+    head()
 ```
+
+
 
 Mientras un águila se alimenta, a veces otra se abalanza y trata de robar el
 salmón. Llamemos al águila que se está alimentando la "víctima" y al ladrón el
@@ -105,6 +109,8 @@ grande o no, $V$ es una variable ficticia que indica si la víctima tenía o no 
 tamaño corporal grande, y finalmente $A$ es una variable ficticia que indica si
 el pirata era o no un adulto. Ajusta el modelo anterior a los datos de las
 águilas con la herramienta de tu preferencia e interpreta las estimaciones. 
+
+
 
 (b) Luego grafica las predicciones posteriores. Para esto calcula y muestra
 tanto: 1) la predicción de la probabilidad de éxito y su intervalo de
@@ -130,15 +136,22 @@ hipótesis que los huracanes con nombres femeninos son más letales. Carga los
 datos con:
 
 
-```{r}
-# data(Hurricanes)
-# Hurricanes %>% 
-#     head()
+```{r warning=FALSE, paged.print=TRUE}
+data(Hurricanes)
+Hurricanes %>% 
+   head()
 ```
 
-Familiarízate con las columnas inspeccionando la ayuda `?Hurricanes`. En este
-problema, te concentrarás en predecir muertes usando la feminidad de cada nombre
-del huracán. 
+| Variables | Descripción|
+|:-----|:--------|
+|name |nombre otorgado al huracán
+|year| año en que aconteció el huracán
+|deaths | número de muertes
+|category | severidad del huracán
+|min_pressure | Minimum pressure, a measure of storm strength; low is stronger
+|damage_norm | estimaciones normalizadas del costo de los daños (en dólares)
+|female | variable indicadora para un nombre femenino
+|femininity | escala de 1 al 11; dónde 1 es nombre totalmente masculino y 11 nombre totalmente femenino.
 
 a) Ajustaremos e interpretaremos el modelo más simple posible, un
 modelo de Poisson de muertes utilizando la feminidad como predictor. Puede
@@ -146,6 +159,8 @@ utilizar quap o ulam. Compara el modelo a un modelo de muertes Poisson con sólo
 intercepto. ¿Qué tan fuerte es la asociación entre la feminidad del nombre y el
 número de muertes? ¿Qué tormentas ajustan bien con el modelo? ¿Qué tormentas son
 las que no son tan fáciles de predecir?
+
+
 
 b) Los conteo casi siempre están demasiado dispersos en relación con una
 distribución Poisson. Así que ajusta un Modelo gamma-Poisson (también conocido
@@ -174,72 +189,580 @@ modelo que usa `log(damage_norm)` a un modelo que usa `damage_norm`
 directamente. Compara la capacidad predictiva, así como sus predicciones
 implícitas. ¿Qué es lo que concluyes?
 
-# Inferencia Causal: experimentos aleatorizados
 
-Distribuciones muestrales bajo aleatorización: Utilice la covariable y el
-potencial de salida (*potential outcome*) de los datos en la tabla 18.1 del
-libro *Regresion and Other Stories*. Abajo viene una versión simplificada
-(aunque hacen falta un par más, incorporalas):
+# Inferencia causal: experimentos aleatorizados
+
+En el siguiente ejercicio trabajamos con los siguientes datos:
+
+```{r paged.print=TRUE}
+omega <- tibble(female = factor(rep(rep(c(1,0), each = 2), 2)), 
+                age    = rep(c(4,5,6,7), each = 2) * 10, 
+                treatment = factor(rep(c(0,1), each = 4)), 
+                outcome = rep(c(140, 150, 155, 160), each = 2))
+omega
+```
+
+Donde la relación causal modelada es la siguiente:
 
 ```{r}
+par(mar=c(0,0,0,0))
+plot(c(-.5,4), c(0,1.8), xlab="", ylab="", xaxt="n", yaxt="n", bty="n", type="n")
+text(0, 1, "x", cex=1.5)
+text(3.5, 1.0, expression (y), cex=1.5)
+text(c(0,1,3.5), c(1.8,1.8,1.8), c("Antes","","Outcome"), cex=1)
+text(1.9, .72, "Tratamiento=0 ", cex=1.2, srt=-16)
+text(1.9, 1.27, "Tratamiento=1", cex=1.2, srt=14.3)
+arrows(c(1.1,1.1), c(1,1), c(3.3,3.3), c(.5, 1.5))
+arrows(-.3,.2,4,.2, length=.2)
+text(1.8, .1, "Tiempo", cex=1)
+```
 
-omega <- tibble(female = factor(rep(rep(c(1,0), each = 2), 2)), 
-       age    = rep(c(4,5,6,7), each = 2) * 10, 
-       treatment = factor(rep(c(0,1), each = 4)), 
-       outcome = rep(c(140, 150, 155, 160), each = 2))
+Los datos provienen de la tabla 18.1 del libro *Regression and Other Stories*, 
+misma que incluye algunas covariables y el potencial de salida (*potential outcome*).
 
-omega %>% head()
+Para la aleatorización y asignación al grupo de tratamiento, consideramos 
+cuatro diseños diferentes:
+
+
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
++ Diseño completamente aleatorizado
++ Diseño aleatorio usando bloques
++ Diseño de pares combinados: sexo
++ Diseño de pares combinados: edad
+
+</div>
+
+Para dar evidencia de que las asignaciones aleatorias del tratamiento
+fueron satisfactorias (en el sentido de independencia),  presentamos 
+tablas de balance; con estas tablas, típicamente se muestra la 
+diferencia en las medias entre tratamiento y control para las distintas 
+covariadas ($X_i$), esperando que la mayoría de ellas no sean 
+estadísticamente distintas. Esta tabla va acompañada con un ayuda visual.
+
+Luego, calculamos los efectos promedios del tratamiento, para cada uno
+de los diseño implementados y presentamos los resultados de las 
+siguientes especificaciones:
+
++ Regresión del indicador de tratamiento y la edad,
++ Regresión del indicador de tratamiento, edad y sexo,
++ Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento
+$\times$ sexo.
+
+A lo largo de toda la sección, comentamos sobre el sesgo relativo y la eficiencia 
+de las asignaciones y modelos.
+
+
+```{r funciones ejercicios 3}
+# Funciones auxiliares
+
+mean_diff_outcomes <- function(df){
+  # Calcula diferencia de medias
+  y_t<- df %>% filter(treatment==1) %>% dplyr::select(outcome) %>% colMeans()
+  y_c <- df %>% filter(treatment==0) %>% dplyr::select(outcome) %>% colMeans()
+  mean_diff = as.numeric(y_t-y_c)
+  return(mean_diff)
+}
+
+first_model_omega <- function(my_data){
+  # Primera especificación: indicador de tratamiento y la edad
+  model <- stan_glm(
+    outcome ~ treatment+female,
+    data = my_data,
+    refresh = 0,
+    iter = 1000,
+    seed=seed
+  )
+return(model)
+}
+
+second_model_omega <- function(my_data){
+  # Segunda especificación: indicador de tratamiento, edad y sexo
+  model <- stan_glm(
+    outcome ~ treatment+female+age,
+    data = my_data,
+    refresh = 0,
+    iter = 3000,
+    seed=seed
+  )
+return(model)
+}
+
+third_model_omega <- function(my_data){
+  # Tercera especificación : indicador de tratamiento, edad, sexo e interacción 
+  model <-stan_glm(
+    outcome ~ treatment+female+age+female*treatment,
+    data = my_data,
+    refresh = 0,
+    iter = 1000,
+    seed=seed
+)
+return(model)
+}
+
+tablas_balance_omega <- function(data){
+  # Verificando balance en asignación
+data <- subset(data, select=c("age",
+                               "female",
+                               "treatment"
+                               ))
+data %<>% 
+  mutate(
+    treatment =ifelse(treatment==1, 'Grupo de Tratamiento', 'Grupo de Control')
+  ) %>% 
+  dplyr::rename('Asignación'=treatment)
+labs <- c('Edad',
+          'Género')
+table_balance <-st(data, 
+                   group = 'Asignación',
+                   summ = list(
+                     c('notNA(x)','mean(x)')),
+                   summ.names = list(
+                     c('Total','Promedio/Porcentaje')
+                   ),
+                   labels =labs,
+                   group.test = TRUE)  
+                  
+return(table_balance)  
+}
+
+balance_graphs <- function(data, title){
+# Acompañamiento visual  
+age_balance <- data %>% 
+  ggplot(aes(age))+
+  geom_bar() +
+  facet_grid(treatment ~ .,
+             labeller = labeller(treatment = c("1" ="Tratamiento",
+                                               "0"= "Control"))) +            
+  theme_minimal()+
+  labs(
+    title=title,
+    y='Conteo',
+    x='Edad'
+  )
+gender_balance <- data %>% 
+  ggplot(aes(female), group=treatment) +
+  geom_bar() +
+  facet_grid(treatment ~ .,
+             labeller = labeller(treatment = c("1" ="Tratamiento",
+                                               "0"= "Control")))+
+  theme_minimal()+
+  labs(
+    title=NULL,
+    y=NULL,
+    x='Género'
+  )
+
+return(age_balance + gender_balance)
+}
 
 ```
 
-como punto de partida para considerar distribuciones de aleatorización de cuatro
-diseños diferentes mediante la creación de simulaciones en `R`.
+## Diseños y Balance Check
 
-Comenta sobre el sesgo relativo y la eficiencia para cada uno de los siguientes
-diseños:
-• Diseño completamente aleatorizado,
-• Diseño aleatorio usando bloques por los cuatro participantes mayores frente a
-los cuatro más jóvenes,
-• Diseño de pares combinados,
+### Diseño Completamente Aleatorizado
 
-utilizando cada una de las siguientes estimaciones:
-• Diferencia de medias,
-• Regresión del indicador de tratamiento y la edad,
-• Regresión del indicador de tratamiento, edad y sexo,
-• Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento
+```{r paged.print=TRUE}
+set.seed(seed)
+complete_rand.omega <- omega %>% 
+  mutate(treatment=sample(rep(c(0,1), length=n())))
+complete_rand.omega
+```
+
+```{r results='asis'}
+tablas_balance_omega(complete_rand.omega)
+```
+
+```{r, fig.height=5, fig.width=6, fig.align='center'}
+balance_graphs(complete_rand.omega, 'Balance Check en Observables: Completa Aleatorización')
+```
+
+
+### Diseño aleatorio usando bloques:
+
+Los cuatro participantes mayores frente a los cuatro más jóvenes.
+
+
+```{r paged.print=TRUE}
+set.seed(seed)
+omega %<>% 
+  mutate(old = ifelse(age>median(age),1,0)) 
+
+omega_block <- randomize(data=omega,
+                         group=c(1,0),
+                         block=omega$old)
+block.omega <- omega
+block.omega$treatment <- factor(omega_block$treatment)
+block.omega
+```
+
+```{r results='asis'}
+tablas_balance_omega(block.omega)
+```
+
+```{r, fig.height=5, fig.width=6, fig.align='center'}
+balance_graphs(block.omega, 'Balance Check en Observables: Aleatorización por Bloques')
+```
+
+
+
+### Diseño de pares combinados
+
++ Edad
+
+```{r paged.print=TRUE}
+set.seed(seed)
+omega_pair_age <- randomize(data=omega,
+                            group=c(1,0),                        
+                            block=omega$age)
+
+pair_age.omega <- omega
+pair_age.omega$treatment <- factor(omega_pair_age$treatment)
+pair_age.omega
+```
+
+```{r results='asis'}
+tablas_balance_omega(pair_age.omega)
+```
+
+```{r, fig.height=5, fig.width=6, fig.align='center'}
+balance_graphs(pair_age.omega, 'Balance Check en Observables\n Aleatorización por Pares Combinados:Edad')
+```
+
+
++ Sexo
+
+```{r paged.print=TRUE}
+set.seed(seed)
+omega_pair_female <- randomize(data=omega,
+                               group=c(1,0), 
+                               block=omega$female)
+pair_female.omega <- omega
+pair_female.omega$treatment <- omega_pair_female$treatment
+pair_female.omega
+```
+
+```{r results='asis'}
+tablas_balance_omega(pair_female.omega)
+```
+
+```{r, fig.height=5, fig.width=6, fig.align='center'}
+balance_graphs(pair_female.omega, 'Balance Check en Observables\n Aleatorización por Pares Combinados:Género')
+```
+
+
+## Diferencia de Medias 
+
+
+```{r paged.print=TRUE}
+list_data <- list(complete_rand.omega, 
+                  block.omega,
+                  pair_age.omega, 
+                  pair_female.omega)
+ates <- lapply(list_data, mean_diff_outcomes)
+names_objects <- c("complete_rand", 
+                   "block", 
+                   "pair_age",
+                   "pair_female"
+                  )
+names(ates) <- names_objects
+compare_diff <- ates %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  dplyr::rename('Diferencia de Medias'=V1)
+compare_diff
+```
+
+## Modelos
++ Regresión del indicador de tratamiento y la edad
+
+```{r}
+first_models <-lapply(list_data, first_model_omega)
+names(first_models) <- names_objects
+lapply(first_models, summary)
+```
+
+```{r}
+lapply(first_models, mcmc_areas)
+```
+
++ Regresión del indicador de tratamiento, edad y sexo
+
+```{r}
+second_models <-lapply(list_data, second_model_omega)
+names(second_models) <- names_objects
+lapply(second_models, summary)
+lapply(second_models, mcmc_areas)
+```
+
++ Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento
 $\times$ sexo.
 
-# Inferencia Causal y Modelos de Regresión: vacas 
+```{r}
+third_models <-lapply(list_data, third_model_omega)
+names(third_models) <- names_objects
+lapply(third_models, summary)
+lapply(third_models, mcmc_areas)
 
-*Aleatorización desordenada*: los datos de `vacas.txt` contiene datos de un
-experimento que se llevó a cabo con 50 vacas para estimar el efecto de un
-complemento alimenticio en 6 resultados relacionados con la cantidad de grasa
-láctea producida por cada vaca. Se consideraron cuatro dietas (tratamientos),
+```
+
+```{r}
+first_models_loos<-lapply(first_models, loo)
+second_models_loos<-lapply(second_models, loo)
+third_models_loos<-lapply(third_models, loo)
+```
+
+
+```{r paged.print=TRUE}
+comparing_models <- loo_compare(
+                                first_models_loos[[1]],
+                                first_models_loos[[2]],
+                                first_models_loos[[3]],
+                                first_models_loos[[4]],
+                                second_models_loos[[1]],
+                                second_models_loos[[2]],
+                                second_models_loos[[3]],
+                                second_models_loos[[4]],
+                                third_models_loos[[1]],
+                                third_models_loos[[2]], 
+                                third_models_loos[[3]],
+                                third_models_loos[[4]]
+                                ) %>% 
+  as.data.frame() 
+comparing_models
+```
+
+
+# Inferencia Causal y Modelos de Regresión: Vacas 
+
+Para este último ejercicio, emplearemos los datos de `vacas.txt`, mismo que contiene
+datos de un experimento que se llevó a cabo con $50$ vacas para estimar el efecto de un
+complemento alimenticio en `6` resultados relacionados con la cantidad de grasa
+láctea producida por cada vaca. 
+
+```{r paged.print=TRUE}
+vacas <- read_delim("vacas.txt", delim = " ")
+vacas <- mutate_all(vacas, function(x) as.numeric(as.character(x)))
+vacas %<>% 
+  mutate(milk.fat=milk*fat)
+vacas
+```
+
+Se consideraron cuatro dietas (tratamientos),
 correspondientes a diferentes niveles del complemento, y se registraron tres
-variables antes de la asignación del tratamiento: número de lactancia
-(temporadas de lactancia), edad y peso inicial de la vaca.
+variables antes de la asignación del tratamiento: 
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Definición del experimento**
+
++ Tratamiento: Dietas correspondientes a diferentes niveles del complemento. Dado 
+por la variable `level`;
++ + Grupo de control: level=0 
++ + Grupos de tratamiento: level=0.1 o level:0.2, level=0.3
+
+**Variables levantadas antes del tratamiento**
+
+ + lactation: número de veces que la vaca ha lactado
+ + temporadas de lactancia
+ + age: edad de la vaca (meses)
+ + initial.weight: peso inicial de la vaca (libras)
+
+**Variables medidas después de tratamiento**
+
++ dry:  promedio diario de materia seca consumida por la vaca (en kilogramos)
++ milk:  promedio diario de producto lacteo producido
++ fat:  porcentaje de grasa en la leche
++ milk.fat:  grasa láctea media diaria
+
+</div>
 
 Las vacas se asignaron inicialmente a tratamientos completamente al azar, y
 después se revisaron las distribuciones de las tres covariables para verificar
 el equilibrio a lo largo de los grupos de tratamiento. Se probaron varias
 aleatorizaciones, y la que produjo el "mejor" equilibrio con respecto a las tres
-covariables fue la que se escogió. El tratamiento depende sólo de las
+covariables fue la que se escogió.
+
+El tratamiento depende sólo de las
 covariables completamente observadas y no de las no registradas como el aspecto
 físico de las vacas o los momentos en los que vacas entraron en el estudio. Esto
 es porque las decisiones de volver a aleatorizar no son explicados.
 Consideraremos diferentes estimaciones del efecto del complemento en la grasa
 láctea media diaria producida.
 
-a) Considera la regresión massimple de la grasa láctea media diaria con el nivel
-de complemento. Calcula el efecto del tratamiento estimado (coeficiente de
-regresión) y el error estándar, y explica por qué este no es un análisis
-completamente apropiado dada la aleatorización utilizada.
+## Revisión de balance en la asignación
 
-b) Agrega más predictores al modelo. Explica el razonamiento para la elección de
-covariables en el modelo. Compare el efecto estimado del tratamiento con el
-resultado de (a).
+```{r}
+tablas_balance_vacas <- function(data){
+  # Verificando balance en asignación
+data <- subset(data, select=c("lactation",
+                              "age",
+                              "initial.weight",
+                              "level"
+                               ))
+data %<>% 
+  dplyr::rename('Asignación: Complementos'=level)
+labs <- c('Número de lactancias',
+          'Edad',
+          'Peso Inicial')
+table_balance <-st(data, 
+                   group = 'Asignación: Complementos',
+                   summ = list(
+                     c('notNA(x)','mean(x)')),
+                   summ.names = list(
+                     c('N','Porcentaje')
+                   ),
+                   labels =labs,
+                   group.test = TRUE,
+                   fit.page = TRUE)  
+                  
+return(table_balance)  
+}
+```
 
-c) Repite (b), esta vez considerando el nivel del complemento como un predictor
-categórico con cuatro niveles. Haga una gráfica que muestre la estimación (y el
-error estándar) del efecto del tratamiento en cada nivel, y también mostrando la
-inferencia del modelo ajustado en (b).
+Dada la explicación de la aleatorización y asignación a los distintos niveles de 
+complementos, resulta necesario revisar el balance de la muestra en las tres 
+covariadas --medidas previo al tratamiento:
+
++ Edad de la vaca
++ Número de veces que la vaca ha lactado
++ Peso inicial
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "lightblue">
+
+En la tabla siguiente se presentan las características observables de las
+vacas, previo al tratamiento. Observamos que las características de las vacas, agrupadas 
+por las asignaciones a distintos niveles de complemento (0, 0.1, 0.2 y 0.3) son distintas.
+De hecho, los tres test de diferencias de medias (correspondientes a las tres variables
+medidas previa al tratamiento) indican que las diferencias entre los cuatro grupos, condicionadas 
+a cada una de estas tres covariadas, son estadísticamente
+significativas. **Esto sugiere que hay un grande de desbalance en la muestra**.
+
+</div>
+
+
+```{r, results='asis'}
+tablas_balance_vacas(vacas)
+```
+
+
+
+## Modelos
+
+### El tratamiento como único predictor
+
+Primero, calculamos el efecto del tratamiento sobre la grasa láctea media diaria 
+(y su error estándar), dada por un solo regresor, sin ninguna covariable: `nivel de complemento`.
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "lightblue">
+
+**Advertencia:** Los resultados de esta implementación deben ser tomados con cautela, puesto que, el desbalance identificado, junto con la dudosa evidencia de aleatorización que tenemos sobre la conformación de los grupos, nos sugieren que este tipo de análisis --donde el único predictor es el `tratamiento`--no es apropiado; ello porque las diferencias iniciales entre los grupos nos podrían llevar a problemas de **sesgo por variables omitidas**.
+
+</div>
+
+```{r}
+cows_a = stan_glm(
+  milk.fat ~ level,
+  data = vacas,
+  refresh = 0,
+  iter = 1000,
+  seed=seed
+  )
+summary(cows_a)
+```
+
+
+
+### Inclusión de más predictores: asumiendo el desbalance de la muestra
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "lightblue">
+En la sección anterior, criticamos la supuesta aleatorización empleada durante la asignación 
+de las vacas a los distintos grupos de tratamiento. Sin embargo, dado que la "aleatorización"
+ya ocurrió, lo único que podemos hacer para estimar el efecto de tratamiento promedio real 
+--además de sugerirles considerar otro diseño de aleatorización más apropiado para la siguiente
+ocasión (como un diseño depares combinados o por bloques)-- es controlar los efectos del 
+tratamiento por las distintas covariables levantadas previo al tratamiento. Esto nos
+permitirá mitigar el posible desequilibrio en las covariables relevantes durante la
+"aleatorización" original.
+
+</div>
+
+```{r}
+cows_b = stan_glm(
+  milk.fat ~ level + lactation + age + initial.weight, 
+  data = vacas,
+  refresh = 0,
+  iter = 1000,
+  seed=seed
+  )
+summary(cows_b)
+```
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "lightblue">
+Vemos que, en comparación con la estimación incial, dónde el único predictor era el
+tratamiento, ahora la estimación puntual del efecto promedio del tratamiento es menor: 107.7;
+además, el error estándar asociado a esta estimación puntual es menor. 
+Esto sugiere que nuestro estimador del `ATE` es más **eficiente**.
+ 
+</div>
+
+### Nivel del complemento como un predictor categórico de cuatro niveles
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+En las secciones anteriores, consideramos al nivel del complemento como un
+predictor numérico; ahora, lo consideraremos como un predictor categórico.
+</div>
+
+
+
+> Gráfica de la estimación (y el
+error estándar) del efecto del tratamiento en cada nivel, junto con la
+inferencia del modelo ajustado la sección previa.
+
+```{r}
+vacas %<>%
+  mutate(level=factor(level))
+
+cows_c = stan_lmer(milk.fat ~ (1|level) + lactation + age + initial.weight, 
+                  data = vacas,
+                  refresh = 0,
+                  iter =500,
+                  seed=seed
+                  )
+summary(cows_c)
+``` 
+
+
+
+```{r}
+cows_c %>%
+  spread_draws(b[,level]) %>%
+  compare_levels(b, by = level) %>%
+  ungroup() %>%
+  mutate(level = reorder(level, b)) %>%
+  ggplot(aes(y = level, x = b)) +
+  stat_halfeye() +
+  geom_vline(xintercept = 0, linetype = "dashed") 
+```
