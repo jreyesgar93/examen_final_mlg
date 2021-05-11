@@ -113,7 +113,19 @@ grande o no, $V$ es una variable ficticia que indica si la víctima tenía o no 
 tamaño corporal grande, y finalmente $A$ es una variable ficticia que indica si
 el pirata era o no un adulto. Ajusta el modelo anterior a los datos de las
 águilas con la herramienta de tu preferencia e interpreta las estimaciones. 
+
+Este es un modelo de regresión binomial con liga logit, por lo tanto
+
+$$
+p_i = \textsf{logit}^{-1}(\alpha + \beta_P P_i + \beta_V V_i + \beta_A A_i)
+$$
+Podemos interpretar el signo de los coeficientes como si aumentan o disminuyen la probabilidad de exito de una pesca exitosa. En este caso, aplicando la liga inversa al intercepto, nos indica la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un aguila victima de tamaño grande. Si un intento tiene estas características, tendrá una distribución posterior de probabilidad de éxito con media 0.768. Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beat_A$ lo que implica que si existe un aguila pirata peque;a o el aguila victima es inmadura, entonces se reducia la probabilidad de una pesca exitosa. En cambio, si el aguila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
+
+
+Además, al obtener los intervalos posteriores de incertidumbre de los parámetros al 89%, se observa que ningún valor incluye el cero, por lo que podemos afirmar que los valores son significativos para el modelo. 
+
 ```{r}
+set.seed(42)
 
 model<-stan_glm(cbind(y,n-y)~P+V+A,
                 data = eagles,
@@ -122,7 +134,18 @@ model<-stan_glm(cbind(y,n-y)~P+V+A,
                 prior_intercept = normal(location = 0, scale = 0.5))
 
 summary(model)
+
+posterior_interval(model,prob=.89,pars=c('(Intercept)','PS','VS','AI'))
+
 ```
+
+
+Podemos interpretar el signo de los coeficientes como si aumentan o disminuyen la probabilidad de exito de una pesca exitosa. En este caso, aplicando la liga inversa al intercepto, nos indica la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un aguila victima de tamaño grande. Si un intento tiene estas características, tendrá una distribución posterior de probabilidad de éxito con media 0.7532669. Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beat_A$ lo que implica que si existe un aguila pirata pequeña o el aguila victima es inmadura, entonces se reducia la probabilidad de una pesca exitosa. En cambio, si el aguila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
+
+
+Además, al obtener los intervalos posteriores de incertidumbre de los parámetros al 89%, se observa que ningún valor incluye el cero, por lo que podemos afirmar que los valores son significativos para el modelo. 
+
+Podríamos suponer que un águila pequeña es más aguil y puede huir facilmente de un águila que busca robarle su pesca. Esta misma agilidad asociada al tamaño del águila aplica para el águila pirata, ya que es más probable que le pueda robar su pesca a otra águila. También cuando el águila es inmadura, suponemos tiene menos experiencia y es victima facil para otras águilas que le buscan robar su presa. 
 
 (b) Luego grafica las predicciones posteriores. Para esto calcula y muestra
 tanto: 1) la predicción de la probabilidad de éxito y su intervalo de
@@ -131,21 +154,35 @@ credibilidad de 89\% para cada observación en los datos; como: 2) el número de
 predicción posterior?
 
 
+
 ```{r}
 eagles$group<-seq(1:8)
 #1)
 
+print("Intervalo de probabilidad de exito")
 post_epred<-posterior_epred(model)
 posterior_interval(post_epred,prob=.89)
-ppc_stat_grouped( y = eagles$y/eagles$n,yrep =post_epred,group = eagles$group,freq = TRUE , size = 100)
+print("Predicción de probabilidad de exito")
+invlogit(predict(model))
+ppc_stat_grouped( y = eagles$y/eagles$n,yrep =post_epred,group = eagles$group,freq = TRUE)
 
 
 #2)
+
+print("Intervalo de Número de éxitos")
 post_pred<-posterior_predict(model)
+
 posterior_interval(post_pred,prob=.89)
-ppc_stat_grouped( y = eagles$y,yrep =post_pred,group = eagles$group,freq = TRUE , size = 100)
+print("Predicción de Número de éxitos")
+invlogit(predict(model))*eagles$n
+ppc_stat_grouped( y = eagles$y,yrep =post_pred,group = eagles$group,freq = TRUE)
 
 ```
+
+Para cada águila, graficamos la prediccion posterior del numero de exitos dados sus predictores al igual que su probabilidad de exito. El primer indicador, la probabilidad de exito, nos dice si una pesca sera exitosa dados los predictores. El numero de exitos representa el numero de exitos dado el numero de intentos que hizo el aguila y el resto de sus predictores. Observamos que para cada águila varia tanto su probabilidad de exito como su número de éxitos, ya que cambian sus predictores. 
+
+Observamos que las predicciones puntales (distribución posterior evaluado en la media) caen dentro de los intervalos de confianza, tanto de la probabilidad de éxito como del número de éxitos.
+
 
 (c) Ahora intenta mejorar el modelo. Considera una interacción entre el tamaño y
 edad de los piratas. Compara la capacidad predictiva de los modelos. Interpreta
@@ -213,17 +250,52 @@ summary(model7)
 
 
 
-loo1<-loo(model)
-loo2<-loo(model2)
-loo3<-loo(model3)
-loo4<-loo(model4)
-loo5<-loo(model5)
-loo6<-loo(model6)
-loo7<-loo(model7)
+loo1<-loo(model,k_threshold = 0.7)
+loo2<-loo(model2,k_threshold = 0.7)
+loo3<-loo(model3,k_threshold = 0.7)
+loo4<-loo(model4,k_threshold = 0.7)
+loo5<-loo(model5,k_threshold = 0.7)
+loo6<-loo(model6,k_threshold = 0.7)
+loo7<-loo(model7,k_threshold = 0.7)
 
 loo_compare(loo1,loo2,loo3,loo4,loo5,loo6,loo7)
 
 ```
+Dado que son pocas combinaciones de interacciones de variables, decidimos intentar todos para determinar cual es el mejor modelo. De acuerdo con la métrica loo utilizando kfold al .7 de los datos observados, determinamos que el mejor modelo es el modelo 6. Este modelo representa el modelo base y la interacción entre tamaño del águila pirata y la edad de del águila victima. Los resultados de este modelo indica que la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un aguila victima de tamaño grande es de 0.7020249. Esto representa una disminución comparado con probabilidad de éxito del modelo original. Para este nuevo modelo,aunque los valores cambian,  se mantienen los signos de los coeficientes de las variables individuales (PSmall,VSmall,AImmature), por lo que su efecto sobre la probabilidad será de forma negativa. El nuevo coeficiente que considera la interacción entre P y A (Psmall,AImmature) también tiene signo negativo, por lo que la probabilidad de éxito diminuirá en caso de que el águila pirata sea pequeña Y la águila victima sea inmadura.
+
+Podríamos suponer que cuando el áquila es inmadura tiene menos experiencia y un águila pirata pequeña es más agil, por lo tanto facilmente puede robar la caputra a un aguila con menos experiencia. 
+
+En este caso, los intervalos de confianza, tanto de la probabilidad de éxito como de número de éxitos cambia.
+
+Si utilizamos otra métrica para evaluar las diferencias de la distribución posterior evaluada en las medias con respecto a los valores reales, notamos que el modelo 6 es mucho más preciso. Calculando el MAE o error promedio absoluto tenemos que para el modelo original, se tiene una diferencia promedio de 1.291587 vs 0.5639608 del mejor modelo con interacción. 
+
+En conclusión, el modelo con interaccion da mejores resultados bajo la métrica Loo y MAE de la distribución posterior en las medias. 
+
+```{r}
+
+print("Intervalo de probabilidad de exito")
+post_epred<-posterior_epred(model6)
+posterior_interval(post_epred,prob=.89)
+print("Predicción de probabilidad de exito")
+invlogit(predict(model6))
+
+
+#2)
+
+print("Intervalo de Número de éxitos")
+post_pred<-posterior_predict(model6)
+
+posterior_interval(post_pred,prob=.89)
+print("Predicción de Número de éxitos")
+invlogit(predict(model6))*eagles$n
+
+print("MAE modelo Original")
+sum(abs(invlogit(predict(model))*eagles$n-eagles$y))/8
+print("Mae mejor modelo")
+sum(abs(invlogit(predict(model6))*eagles$n-eagles$y))/8
+```
+
+
 # Extensiones de modelos de conteo: huracanes
 
 En 2014, se publicó un artículo titulado [*"Female hurricanes are deadlier than
@@ -239,9 +311,10 @@ datos con:
 
 
 ```{r}
-# data(Hurricanes)
-# Hurricanes %>% 
-#     head()
+library(rethinking)
+data(Hurricanes)
+Hurricanes %>% 
+head()
 ```
 
 Familiarízate con las columnas inspeccionando la ayuda `?Hurricanes`. En este
@@ -254,6 +327,44 @@ utilizar quap o ulam. Compara el modelo a un modelo de muertes Poisson con sólo
 intercepto. ¿Qué tan fuerte es la asociación entre la feminidad del nombre y el
 número de muertes? ¿Qué tormentas ajustan bien con el modelo? ¿Qué tormentas son
 las que no son tan fáciles de predecir?
+
+
+```{r}
+
+model_hurricane<-stan_glm(deaths~femininity,family = poisson(link='log'), data=Hurricanes,)
+model_hurricane_2<-stan_glm(deaths~1,family = poisson(link='log'), data=Hurricanes,)
+summary(model_hurricane)
+summary(model_hurricane_2)
+
+loo_h1<-loo(model_hurricane)
+loo_h2<-loo(model_hurricane_2)
+
+loo_compare(loo_h1,loo_h2)
+```
+
+```{r}
+
+plot_title <- ggtitle("Distribucion posterior de coeficientes")
+mcmc_areas(as.matrix(model_hurricane),
+           #pars = c("int", "femininity"),
+           prob = 0.89) + plot_title
+
+plot_title <- ggtitle("Distribucion posterior de coeficientes, Modelo solo Intercepto")
+mcmc_areas(as.matrix(model_hurricane_2),
+           #pars = c("int", "femininity"),
+           prob = 0.89) + plot_title
+
+```
+```{r}
+x<-Hurricanes$femininity
+y<-Hurricanes$deaths
+coef<-model_hurricane$coefficients
+
+ggplot()+geom_point(aes(x,y))+geom_line(aes(x,exp(coef[1]+coef[2]*x)),color="red")+geom_abline(aes(intercept=coef[1],slope = 0),color = "blue")
+
+
+```
+
 
 b) Los conteo casi siempre están demasiado dispersos en relación con una
 distribución Poisson. Así que ajusta un Modelo gamma-Poisson (también conocido
@@ -271,7 +382,7 @@ estas interacciones. Interpreta y compara los modelos. Al interpretar las
 estimaciones, te puede ayudar a generar predicciones que contrasten los
 huracanes con nombres masculinos y femeninos. ¿Son probables los coeficientes?
 
-d) En el artículo original sobre huracanes, se utilizó directamente el daño por
+d) En el artículo original sobre huracanes, se utilizó directamente el daño por?=
 tormenta (`damage_norm`). Esta suposición implica que la mortalidad aumenta
 exponencialmente con aumento lineal en la fuerza de la tormenta. Esto debido a
 que en regresión Poisson usamos un enlace logarítmico. Entonces, vale la pena
