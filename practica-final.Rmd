@@ -327,7 +327,8 @@ Hurricanes %>%
 # Inferencia causal: experimentos aleatorizados
 
 En los últimos años, varios estudios han surgido para determinar 
-los efectos de la suplementación con aceite de pescado (omega3) sobre la presión arterial. Para ello, típicamente se construyen dos grupos: uno de 
+los efectos de la suplementación con aceite de pescado (omega3) sobre la
+presión arterial. Para ello, típicamente se construyen dos grupos: uno de 
 tratamiento y otro de control; donde al primero se le asigna cierta
 cantidad de suplemento durante un periodo de tiempo, mientras que al
 segundo se le asigna algún tipo de placebo.
@@ -349,7 +350,8 @@ En el siguiente apartado, vamos a explorar distintos tipos de diseños
 experimentales y sus posibles implicaciones, en términos de sesgo relativo y eficiencia.
 
 Para ello, usamos los datos provenientes de la tabla 18.1 del libro *Regression and Other Stories*, 
-misma que incluye algunas covariables y dos potenciales de salida (*potential outcomes*) ---condicionales a la asignación a tratamiento (o no) de los individuos.
+misma que incluye algunas covariables y dos potenciales de salida (*potential outcomes*)
+---condicionales a la asignación a tratamiento (o no) de los individuos.
 
 ```{r paged.print=TRUE}
 omega <- tibble(
@@ -372,7 +374,9 @@ ate_real <- omega %>%
   summarise(ate_real = mean(y))
 ```
 
-Por ello, contrario a lo que ocurriría en un experimento real, sabemos que el efecto promedio del tratamiento es de `r toString(ate_real)`. Utilizaremos este dato como nuestro *benchmark* para medir el sesgo relativo.
+Por ello, contrario a lo que ocurriría en un experimento real, sabemos que el 
+efecto promedio del tratamiento es de `r toString(ate_real)`. Utilizaremos este
+dato como nuestro *benchmark* para medir el sesgo relativo.
 
 Para la aleatorización y asignación al grupo de tratamiento, consideramos 
 cinco diseños diferentes:
@@ -391,10 +395,11 @@ div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 </div>
 
 Una vez generado cada uno de los diseños, es de nuestro interés verificar
-que nuestra aleaterozación fue satisfactoria (en el sentido de independencia); para ello,  presentamos distintas tablas de balance; 
-con estas tablas, típicamente se muestra la diferencia en las medias entre tratamiento y control para las distintas 
-covariadas ($X_i$), medidas previo al tratamiento, esperando que la mayoría 
-de ellas no sean estadísticamente distintas. 
+que nuestra aleaterozación fue satisfactoria (en el sentido de independencia);
+para ello,  presentamos distintas tablas de balance; con estas tablas, 
+típicamente se muestra la diferencia en las medias entre tratamiento y 
+control para las distintas covariadas ($X_i$), medidas previo al tratamiento,
+esperando que la mayoría de ellas no sean estadísticamente distintas. 
 Esta tabla va acompañada con una ayuda visual.
 
 Luego, calculamos los efectos promedios del tratamiento, para cada uno
