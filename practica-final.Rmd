@@ -363,6 +363,12 @@ coef<-model_hurricane$coefficients
 ggplot()+geom_point(aes(x,y))+geom_line(aes(x,exp(coef[1]+coef[2]*x)),color="red")+geom_abline(aes(intercept=coef[1],slope = 0),color = "blue")
 
 
+post_pred1<-posterior_predict(model_hurricane)
+ppc_stat( y = Hurricanes$deaths,yrep =post_pred1,freq = TRUE)
+
+post_pred2<-posterior_predict(model_hurricane_2)
+ppc_stat( y = Hurricanes$deaths,yrep =post_pred2,freq = TRUE)
+
 ```
 
 
@@ -373,6 +379,27 @@ que el modelo con sobre-dispersión ya no muestra un resultado positivo tan
 preciso entre feminidad y muerte, con un intervalo de 89% que se superpone cero.
 ¿Puedes explicar por qué la asociación disminuyó?
 
+```{r}
+
+
+model_hurricane_3 <- stan_glm(deaths~femininity, 
+                      data = Hurricanes, family = neg_binomial_2,
+                      )
+summary(model_hurricane_3)
+```
+```{r}
+plot_title <- ggtitle("Distribucion posterior de coeficientes")
+mcmc_areas(as.matrix(model_hurricane_3),
+           #pars = c("int", "femininity"),
+           prob = 0.89) + plot_title
+
+posterior_interval(model_hurricane_3,prob=.89,pars=c('(Intercept)','femininity','reciprocal_dispersion'))
+
+post_pred<-posterior_predict(model_hurricane_3)
+ppc_stat( y = Hurricanes$deaths,yrep =post_pred,freq = TRUE)
+```
+
+
 c) En los datos, hay dos medidas del potencial de letalidad de un huracán:
 `damage_norm` y `min_pressure`. Consulta `?Hurricanes`. Hace algo de sentido
 imaginar que la feminidad de un nombre importa más cuando el huracán es en sí
@@ -381,6 +408,15 @@ o las dos `damage_norm` y `min_pressure`. Ajusta una serie de modelos evaluando
 estas interacciones. Interpreta y compara los modelos. Al interpretar las
 estimaciones, te puede ayudar a generar predicciones que contrasten los
 huracanes con nombres masculinos y femeninos. ¿Son probables los coeficientes?
+```{r}
+
+model_hurricane_4 <- stan_glm(deaths~femininity+femininity:min_pressure, 
+                      data = Hurricanes, family = neg_binomial_2,
+                      )
+summary(model_hurricane_4)
+```
+
+
 
 d) En el artículo original sobre huracanes, se utilizó directamente el daño por?=
 tormenta (`damage_norm`). Esta suposición implica que la mortalidad aumenta
