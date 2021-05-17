@@ -24,7 +24,6 @@ output:
 
 ```{r setup, include=FALSE}
 
-
 # Set up
 packages <- c("tidymodels", 
               "tidyverse",
@@ -308,6 +307,7 @@ y consideramos la hipótesis siguiente:
 
 > Los huracanes con nombres femeninos son más letales.
 
+
 Para ello, primero nos familiarizamos los datos.
 
 
@@ -335,6 +335,7 @@ Table: Sobre la base de datos
 |femininity | escala de 1 al 11; dónde 1 es nombre totalmente masculino y 11 nombre totalmente femenino.
 
 Primero, procedemos con algunas estadísticas descriptivas.
+
 ```{r}
 Hurricanes %>% 
   ggplot(aes(x=deaths)) + 
@@ -345,8 +346,6 @@ Hurricanes %>%
        x='Número de Muertes') +
   theme_minimal()
 ```
-Primero observamos que 
-
 ```{r}
 Hurricanes %>% 
   ggplot(aes(x=category,
@@ -470,7 +469,7 @@ dado nuestro conocimiento limitado del problema y todo lo relacionado con los
 el fenómeno natural que queremos modelar, utilizamos como distribuciones prioris 
 las default de Stan.
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 m_hurricanes_a <- list()
 m_hurricanes_a[[1]] <- stan_glm(
   deaths~femininity,
@@ -498,7 +497,8 @@ pblapply(m_hurricanes_a, summary, digits=3)
 
 Al 0.89 por ciento de probabilidad, los intervalos de probabilidad de ambos modelos
 no contienen al cero. En específico, el modelo en el cual se incluye a la 
-variable feminidad como predictora sugiere que **existe una relación positiva y grande entre feminidad y el número de muertes causadas por un huracán**.
+variable feminidad como predictora sugiere que
+**existe una relación positiva y grande entre feminidad y el número de muertes causadas por un huracán**.
 
 
 
@@ -509,9 +509,11 @@ lapply(m_hurricanes_a, mcmc_areas, prob=0.89)
 
 **Modelo con único predictor: Feminidad**
 
-+ $\beta_O$:  el logaritmo de la cuenta esperada para el número de muertes causadas por huracanes con nombres completamente masculinos es `r toString(round(as.vector(coef(m_hurricanes_a[[1]])[1]),2))`.
++ $\beta_O$:  el logaritmo de la cuenta esperada para el número de muertes causadas
+por huracanes con nombres completamente masculinos es `r toString(round(as.vector(coef(m_hurricanes_a[[1]])[1]),2))`.
 + $\beta_1$:  en promedio, un aumento en una unidad en la "feminidad" de un nombre,
-está asociado con un aumento de `r toString(round((exp(as.vector(coef(m_hurricanes_a[[1]])[2]))-1)*100,2))` por ciento en el número de muertes.
+está asociado con un aumento de `r toString(round((exp(as.vector(coef(m_hurricanes_a[[1]])[2]))-1)*100,2))` 
+por ciento en el número de muertes.
 
 ### Distribución posterior predictiva
 
@@ -676,19 +678,19 @@ o las dos `damage_norm` y `min_pressure`.A continuación, ajustamos los siguient
 tres modelos para evaluar esta relación.
 
 
-> Modelo con interacción entre femininity y damage_norm_sd 
+> Modelo con interacción entre femininity y damage_norm_sd (c.1)
 
 $$y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{feminidad}+\beta_2\text{damage_norm}+
 \beta_3\text{feminidad * damage_norm}}, \phi)$$
 
-> Modelo con interacción entre femininity y min_pressure_sd
+> Modelo con interacción entre femininity y min_pressure_sd (c.2)
 
 $$ y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{feminidad}+\beta_2\text{min_pressure}+
 \beta_3\text{feminidad * min_pressure}}, \phi)$$
 
-> Modelo con interacción entre  femininity, min_pressure_sd y damage_norm_sd
+> Modelo con interacción entre  femininity, min_pressure_sd y damage_norm_sd (c.3)
 
-$$y_i \sim \text{Bin Neg}(e^{X\beta}, \phi),$$
+$$y_i \sim \text{Bin Neg}(e^{X^T \beta}, \phi),$$
 
 dónde:
 $$ X\beta  = \beta_0+\beta_1\text{feminidad}+\beta_2\text{min_pressure}+ \\
@@ -716,28 +718,25 @@ Hurricanes %>%
 ```
 
 
-La estimación para los modelos 4, 5 y 6 se muestran a continuación:
+La estimación para los modelos c.1, c.2 y c.3 se muestran a continuación:
 
 ```{r include=FALSE}
 m_hurricanes_c <- list()
 m_hurricanes_c[[1]] <- stan_glm(deaths ~ 1 + femininity + damage_norm_sd + femininity:damage_norm_sd,
                                 data = Hurricanes, 
                                 family = neg_binomial_2(link = "log"), 
-                                seed = seed,
-                                chains = 4)
+                                seed = seed)
 m_hurricanes_c[[2]] <- stan_glm(deaths ~ 1 + femininity + min_pressure_sd + femininity:min_pressure_sd,
                                 data = Hurricanes, 
                                 family = neg_binomial_2(link = "log"), 
-                                seed = seed,
-                                chains = 4)
+                                seed = seed)
 
 m_hurricanes_c[[3]] <- stan_glm(deaths ~ 1 + femininity + min_pressure_sd + damage_norm_sd +
                                 femininity:min_pressure_sd + femininity:damage_norm_sd +
                                 femininity:min_pressure_sd:damage_norm_sd,
                                 data = Hurricanes, 
                                 family = neg_binomial_2(link = "log"), 
-                                seed = seed,
-                                chains = 4)
+                                seed = seed)
 ```
 
 ```{r}
@@ -749,10 +748,98 @@ names(m_hurricanes_c) <- n_hurricanes_c
 pblapply(m_hurricanes_c, summary, digits=3)
 ```
 
+### Interpretación de coeficientes
+
+¡Recordar que previamente rescalamos nuestros datos!
+
 ```{r}
 lapply(m_hurricanes_c, posterior_interval, prob=0.89)
 lapply(m_hurricanes_c, mcmc_areas, prob=0.89)
 ```
+
+> Modelo con interacción entre femininity y damage_norm_sd (c.1)
+
++ $\beta_0$: en promedio, el logaritmo de la cuenta esperada para el número de muertes
+causadas por huracanes (con nombres con nula feminidad y costos de daños promedio),
+es  igual a `r toString(round(as.vector(coef(m_hurricanes_c[[1]])[1]),2))`. 
++ $\beta_1$: ante un aumento en una unidad en la feminidad del nombre de un huracán,
+se espera, en promedio, un aumento en 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[1]])[2]))-1)*100,2))` por ciento 
+en el número de muertes; esto con respecto al caso base: huracanes con nombres con nula 
+feminidad y costos de daños promedio.
++ $\beta_2$: ceteris paribus, ante un aumento en una desviación estándar en los costos de 
+daños promedios asociados al huracán, se espera un aumento promedio de
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[1]])[3]))-1)*100,2))` por ciento
+en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
+feminidad y costos de daños promedio.
++ $\beta_3$: ceteris paribus, se espera un aumento promedio de 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[1]])[3])+as.vector(coef(m_hurricanes_c[[1]])[4]))-1)*100,2))`
+por ciento en el número de muertes; esto, con respecto al caso base: huracanes
+con nombres con femenidad igual a 1 y costos de daños promedio.
+
+> Modelo con interacción entre femininity y min_pressure_sd (c.2)
+
++ $\beta_0$: en promedio, el logaritmo de la cuenta esperada para el número de muertes
+causadas por huracanes (con nombres con nula feminidad y con intensidad promedio),
+es igual a `r toString(round(as.vector(coef(m_hurricanes_c[[2]])[1]),2))`. 
++ $\beta_1$: ante un aumento en una unidad en la feminidad del nombre de un huracán,
+se espera, en promedio, un aumento en 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[2]])[2]))-1)*100,2))` por ciento 
+en el número de muertes; esto con respecto al caso base: huracanes con nombres con nula 
+feminidad e intensidad promedio.
++ $\beta_2$: ceteris paribus, ante un aumento en una desviación estándar de la intensidad promedio
+del huracán, se espera una reducción promedio de
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[2]])[3]))-1)*100,2))` por ciento
+en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
+feminidad e intensidad promedio.
++ $\beta_3$: ceteris paribus, se espera una reducción promedio de 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[2]])[3])+as.vector(coef(m_hurricanes_c[[2]])[4]))-1)*100,2))`
+por ciento en el número de muertes; esto, con respecto al caso base: huracanes
+con nombres con femenidad igual a 1 e intensidad promedio.
+
+> Modelo con interacción entre  femininity, min_pressure_sd y damage_norm_sd (c.3)
+
++ $\beta_0$: en promedio, el logaritmo de la cuenta esperada para el número de muertes
+causadas por huracanes (con nombres con nula feminidad e intensidad y costos por daños promedio),
+es igual a `r toString(round(as.vector(coef(m_hurricanes_c[[3]])[1]),2))`. 
++ $\beta_1$: ante un aumento en una unidad en la feminidad del nombre de un huracán,
+se espera, en promedio, un aumento en 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[3]])[2]))-1)*100,2))` por ciento 
+en el número de muertes; esto con respecto al caso base: huracanes con nombres con nula 
+feminidad, intensidad y costos por daños promedio
++ $\beta_2$: ceteris paribus, ante un aumento en una desviación estándar de la intensidad promedio
+del huracán, se espera una reducción promedio de
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[3]])[3]))-1)*100,2))` por ciento
+en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
+feminidad y costos por daños promedio.
++ $\beta_3$: ceteris paribus, ante un aumento en una desviación estándar en el costo por daños
+promedio, se espera un aumento promedio de
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[3]])[4]))-1)*100,2))` por ciento
+en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
+feminidad e intensidad promedio.
+
+
+> Probabilidad de los coeficientes
+
+En este apartado, analizamos la probabilidad de los coeficientes --entendida como 
+la exclusión del cero dentro de intervalo de probabilidad. Para ello, observamos los 
+intervalos de probabilidad (al 89 por ciento) para cada uno de los modelos con 
+interacción.
+
+
+```{r}
+pblapply(m_hurricanes_c, posterior_interval, prob=0.89) 
+```
+
++ Para el modelo donde se incluye la interacción  *feminidad:damage_norm*, vemos que el
+único coeficiente probable al 89 por ciento, aparte del intercepto, es el asociado a damage_norm_sd.
+
++ Para el modelo donde se incluye la interacción  *femininity:min_pressure_s*, vemos que
+todos los coeficientes son probables al 89 por ciento. 
+
++ Para el modelo donde se incluye la interacción  *femininity:min_pressure_s:damage_norm*, 
+vemos que los únicos coeficientes probables al 89 por ciento, son los asociados a min_pressure_sd, 
+femininity:damage_norm_sd y femininity:min_pressure_sd:damage_norm_sd. 
 
 
 ```{r}
@@ -764,12 +851,28 @@ lapply(
     )
 ```
 
+Finalmente, evaluamos la capacidad predictiva de los modelos:
+
+
 ```{r}
 loos_c <- pblapply(m_hurricanes_c, loo, k_threshold = 0.7)
 names(loos_c) <- n_hurricanes_c
 
 loo_compare(loos_c) %>% as.data.frame()
 ```
+
+De acuerdo con la tabla presentada, el mejor modelo, en términos de su capacidad 
+predictiva es el modelo que incluye la interacción `femininity:min_pressure_sd:damage_norm_sd`;
+sin embargo, previamente habíamos identificado que los modelso con interacciones 
+`femininity:min_pressure_sd` y
+`femininity:min_pressure_sd:damage_norm_sd` presentan problemas para el 
+parámetro de forma $k$ de la distribución de pareto generalizada. En razón a ello, 
+siendo que la diferencia entre el primer mejor "modelo" y el segundo mejor modelo no 
+es tan grande, optamos por el modelo que incluye la interración `femininity:damage_norm_sd`.
+La bondad de este modelo, además de no presentar problemas en la distribución
+de pareto generaliza, es que al ser más parsimonioso, facilita la interpretación
+de los coeficientes.
+
 
 ## Hipótesis alternativa
 
@@ -784,8 +887,8 @@ vale la pena explorar una hipótesis alternativa:
 
 Por ello, ahora exploraremos con la inclusión del logaritmo de `damage_norm` como 
 un predictor. Luego, lo compararemos con todos los modelos antes especificados, con
-particular énfasis en una comparación con el modelo dónde se incluye `damage_norm`
-sin ninguna 
+particular énfasis en una comparación con el modelo dónde se incluye la interacción
+`femininity:damage_norm_sd`.
 
 **Especificación del Modelo:**
 $$y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{feminidad}+\beta_2\log(\text{damage_norm})+
@@ -823,7 +926,9 @@ pp_check(plotfun = "dens_overlay") +
       axis.ticks = element_blank()
     )
 ```
-Ahora vamosa a estudiar la significancia de los coeficientes del modelo 7 al 89 por ciento. Esto se muestra en la siguiente gráfica.
+
+Ahora estudiamos la significancia de los coeficientes del que incluye el logaritmo de `damage_norm.`
+Para esto, obsevamos el intervalo de probabildiad al 89 por ciento.
 
 ```{r}
 posterior_interval(m_hurricanes_d[[1]], prob = 0.89)
@@ -831,9 +936,34 @@ posterior_interval(m_hurricanes_d[[1]], prob = 0.89)
 
 
 ```{r}
-mcmc_areas(m_hurricanes_d[[1]], prob_outer = 0.89) + ggtitle("Distribución posterior de los coeficientes del modelo 7.")
+m_hurricanes_d[[1]] %>% 
+mcmc_areas(prob_outer = 0.89) + 
+  labs(
+    title= "Distribución posterior de los coeficientes."
+    )+
+  theme_minimal() +
+  theme(
+    text = element_text(size=8), 
+    axis.ticks = element_blank(),
+    legend.position="bottom",    
+    axis.text.y = element_blank()
+  )
+
 ```
 
+Finalmente, comparamos la capacidad predictiva de modelo que emplea la transformación 
+logarítmica, contra los modelos previos. Se encuentra que el modelo con mejor 
+capacidad predictiva es precisamente el modelo que incluyte la transformación 
+logarítmica de `damage_norm`.
+
+```{r}
+loos_d<- lapply(m_hurricanes_d, loo)
+names(loos_d) <- c("Modelo log(damage_norm)")
+```
+
+```{r}
+loo_compare(c(loos_c, loos_d)) %>%  as.data.frame()
+```
 
 # Inferencia causal: experimentos aleatorizados
 
@@ -967,7 +1097,7 @@ third_model_omega <- function(my_data){
     outcome ~ treatment + age + female + female*treatment,
     data = my_data,
     refresh = 0,
-    iter = 20000,
+    iter = 5000,
     seed=seed
 )
 return(model)
@@ -1678,6 +1808,17 @@ cows_c = stan_lmer(milk.fat ~ (1|level) + dry,
                   )
 summary(cows_c)
 ``` 
+
+
+```{r}
+pp_check(cows_c, plotfun = "dens_overlay")
+```
+### Distribución posterior de los coeficientes
+```{r}
+models4_mixed <-list(cows_b, cows_c)
+names(models4_mixed)<- c("Treatment as Numeric", "Treatment as Categoric")
+lapply(models4_mixed,mcmc_areas, prob_outer=0.99)
+```
 
 ```{r}
 cows_c %>%
