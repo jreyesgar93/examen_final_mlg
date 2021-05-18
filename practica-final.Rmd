@@ -168,12 +168,12 @@ Dada éstas carácteríticas, la distribución posterior de probabilidad de éxi
 una media equivalente a $0.7532669$. 
 
 
-Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beat_A$ lo que implica que si existe un aguila pirata pequeña o el aguila victima es inmadura, entonces se reducia la probabilidad de una pesca exitosa. En cambio, si el aguila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
+Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beta_A$ lo que implica que si existe un águila pirata pequeña o el águila victima es inmadura, entonces se reducia la probabilidad de una pesca exitosa. En cambio, si el aguila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Sin embargo, se puede dar un cambio aproximado al dividir entre 4, por lo tanto, tenemos una reducción aproximada del 80% si el águila pirata es pequeña, un aumento del 81% si el águila es victima es pequeña y una reducción del 25% si el águila es inmadura.  Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
 
 
-Además, al obtener los intervalos posteriores de incertidumbre de los parámetros al 89%, se observa que ningún valor incluye el cero, por lo que podemos afirmar que los valores son significativos para el modelo. 
+Además, al obtener los intervalos de alta densidad posteriores de incertidumbre de los parámetros al 89%, se observa que ningún valor incluye el cero, por lo que podemos afirmar que los valores son significativos para el modelo. 
 
-Podríamos suponer que un águila pequeña es más aguil y puede huir facilmente de un águila que busca robarle su pesca. Esta misma agilidad asociada al tamaño del águila aplica para el águila pirata, ya que es más probable que le pueda robar su pesca a otra águila. También cuando el águila es inmadura, suponemos tiene menos experiencia y es victima facil para otras águilas que le buscan robar su presa. 
+Podríamos suponer que un águila pequeña es más aguil y puede huir facilmente de un águila que busca robarle su pesca. Esta misma agilidad asociada al tamaño del águila aplica para el águila pirata, ya que es más probable que le pueda robar su pesca a otra águila si es de tamaño pequeño. También cuando el águila es inmadura, suponemos tiene menos experiencia y es victima fácil para otras águilas que le buscan robar su presa. 
 
 (b) Luego grafica las predicciones posteriores. Para esto calcula y muestra
 tanto: 1) la predicción de la probabilidad de éxito y su intervalo de
@@ -186,7 +186,7 @@ predicción posterior?
 ```{r}
 eagles$group<-seq(1:8)
 #1)
-print("Intervalo de probabilidad de exito")
+print("Intervalo de probabilidad de exito (media)")
 post_epred<-posterior_epred(model)
 posterior_interval(post_epred,prob=.89)
 print("Predicción de probabilidad de exito")
@@ -196,14 +196,14 @@ ppc_stat_grouped( y = eagles$y/eagles$n,yrep =post_epred,group = eagles$group,fr
 print("Intervalo de Número de éxitos")
 post_pred<-posterior_predict(model)
 posterior_interval(post_pred,prob=.89)
-print("Predicción de Número de éxitos")
+print("Predicción de Número de éxitos (media)")
 invlogit(predict(model))*eagles$n
 ppc_stat_grouped( y = eagles$y,yrep =post_pred,group = eagles$group,freq = TRUE)
 ```
 
-Para cada águila, graficamos la prediccion posterior del numero de exitos dados sus predictores al igual que su probabilidad de exito. El primer indicador, la probabilidad de exito, nos dice si una pesca sera exitosa dados los predictores. El numero de exitos representa el numero de exitos dado el numero de intentos que hizo el aguila y el resto de sus predictores. Observamos que para cada águila varia tanto su probabilidad de exito como su número de éxitos, ya que cambian sus predictores. 
+Para cada águila, graficamos la prediccion posterior del numero de exitos dados sus predictores al igual que su probabilidad de éxito. El valor resaltado T(y) es el valor real calculado entre número de éxitos entre intentos totales. El primer indicador, la probabilidad de éxito, nos dice si una pesca sera exitosa dados los predictores. El número de exitos representa el numero de éxitos dado el numero de intentos que hizo el águila y el resto de sus predictores. El valor resaltado T(y) es el valor real. Observamos que para cada águila varían tanto su probabilidad de éxito como su número de éxitos, ya que cambian sus predictores. 
 
-Observamos que las predicciones puntales (distribución posterior evaluado en la media) caen dentro de los intervalos de confianza, tanto de la probabilidad de éxito como del número de éxitos.
+Observamos que las predicciones puntales (distribución posterior evaluado en la media) caen dentro de los intervalos de alta densidad de la distribución posterior, tanto de la probabilidad de éxito como del número de éxitos.
 
 
 (c) Ahora intenta mejorar el modelo. Considera una interacción entre el tamaño y
@@ -263,13 +263,13 @@ loo6<-loo(model6,k_threshold = 0.7)
 loo7<-loo(model7,k_threshold = 0.7)
 loo_compare(loo1,loo2,loo3,loo4,loo5,loo6,loo7)
 ```
-Dado que son pocas combinaciones de interacciones de variables, decidimos intentar todos para determinar cual es el mejor modelo. De acuerdo con la métrica loo utilizando kfold al .7 de los datos observados, determinamos que el mejor modelo es el modelo 6. Este modelo representa el modelo base y la interacción entre tamaño del águila pirata y la edad de del águila victima. Los resultados de este modelo indica que la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un aguila victima de tamaño grande es de 0.7020249. Esto representa una disminución comparado con probabilidad de éxito del modelo original. Para este nuevo modelo,aunque los valores cambian,  se mantienen los signos de los coeficientes de las variables individuales (PSmall,VSmall,AImmature), por lo que su efecto sobre la probabilidad será de forma negativa. El nuevo coeficiente que considera la interacción entre P y A (Psmall,AImmature) también tiene signo negativo, por lo que la probabilidad de éxito diminuirá en caso de que el águila pirata sea pequeña Y la águila victima sea inmadura.
+Dado que son pocas combinaciones de interacciones de variables, decidimos intentar todos para determinar cual es el mejor modelo. De acuerdo con la métrica loo utilizando kfold al .7 de los datos observados, determinamos que el mejor modelo es el modelo 6. Este modelo representa el modelo base y la interacción entre tamaño del águila pirata y la edad de del águila victima. Los resultados de este modelo indica que la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un águila victima de tamaño grande es de 0.7020249 (intercepto). Esto representa una disminución comparado con probabilidad de éxito del modelo original. Para este nuevo modelo,aunque los valores cambian,  se mantienen los signos de los coeficientes de las variables individuales (PSmall,VSmall,AImmature), por lo que su efecto sobre la probabilidad será de forma negativa. El nuevo coeficiente que considera la interacción entre P y A (Psmall,AImmature) también tiene signo negativo, por lo que la probabilidad de éxito diminuirá en caso de que el águila pirata sea pequeña Y la águila victima sea inmadura.
 
-Podríamos suponer que cuando el áquila es inmadura tiene menos experiencia y un águila pirata pequeña es más agil, por lo tanto facilmente puede robar la caputra a un aguila con menos experiencia. 
+Podríamos suponer que cuando el águila es inmadura tiene menos experiencia y un águila pirata pequeña es más agil, por lo tanto facilmente puede robar la captura a un águila con menos experiencia. 
 
 En este caso, los intervalos de confianza, tanto de la probabilidad de éxito como de número de éxitos cambia.
 
-Si utilizamos otra métrica para evaluar las diferencias de la distribución posterior evaluada en las medias con respecto a los valores reales, notamos que el modelo 6 es mucho más preciso. Calculando el MAE o error promedio absoluto tenemos que para el modelo original, se tiene una diferencia promedio de 1.291587 vs 0.5639608 del mejor modelo con interacción. 
+Si utilizamos otra métrica para evaluar las diferencias de la distribución posterior evaluada en las medias con respecto a los valores reales, notamos que el modelo 6 es mucho más preciso. Esta métrica es utilizada para medir el desempeño de modelos de regresión, por lo que también decidimos incluirla (por curiosidad e interpretabilidad). Calculando el MAE o error promedio absoluto tenemos que para el modelo original, se tiene una diferencia promedio de 1.291587 vs 0.5639608 del mejor modelo con interacción. 
 
 En conclusión, el modelo con interaccion da mejores resultados bajo la métrica Loo y MAE de la distribución posterior en las medias. 
 
@@ -1226,6 +1226,30 @@ problemas de sesgos por variables omitidas.
 ```{r, fig.height=4.5, fig.width=4, fig.align='center'}
 balance_graphs(complete_rand.omega, 'Balance Check en Observables: Completa Aleatorización')
 ```
+### Remuestreo Aleatorio 
+
+Asignando aleatoriamente a los individuos al grupo control y tratamiento, podemos crear una distribución de remuestreo. En este caso, el valor esperado de la distribución de muestreo debe ser igual al estimando. En este caso tiene un valor de 7.5 y se observa que la media de la distribución de muestreo sí tiene ese valor, por lo tanto es un estimador insesgado. 
+```{r}
+mediaBoot <- function(x){ 
+  # x: variable de interés
+  # n: número de replicaciones bootstrap
+  n <- length(x)
+  muestra_boot <- sample(x, size = n, replace = TRUE)
+  mean(muestra_boot) # replicacion bootstrap de theta_gorro
+}
+treatment_effect <- rerun(10000, mediaBoot(c(omega$y_0-omega$y_1))) %>% flatten_dbl()
+
+meante<-mean(treatment_effect)
+
+as.data.frame(treatment_effect)%>% 
+  ggplot(aes(x=treatment_effect)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "Distribución de Remuestreo")+
+  geom_vline(xintercept = 7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meante, color = "blue")+
+  theme_minimal()
+```
+
 
 ### Diseño aleatorio usando bloques:
 
