@@ -1,72 +1,80 @@
 ---
-title: "Práctica Final - Primavera 2021"
-author: Alfredo Garbuno Iñigo
-output: html_document
+title: "Modelación Bayesiana: Práctica Final"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    highlight: tango
+    number_sections: yes
+    code_folding: hide
+    theme: paper
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+    df_print: paged
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
+    toc_depth: '2'
 ---
 
-**Entrega:** 
+<div align='justify'>
 
-Enviar por correo electrónico una carpeta comprimida
-(`equipo-xx.zip`) que incluya datos y codigo de solución a mas tardar el 18 de
-Mayo antes de las 11:59pm (medianoche). El asunto deberá ser `[MB - 2021]
-Final Equipo XX`, donde  reemplazarás `XX` con el codigo de tu equipo. No se
-aceptarán entregas extemporáneas. Será mejor entregar un examen resuelto
-parcialmente, que no entregar nada. 
 
-**Instrucciones:**
-  
-* Tus respuestas deben ser claras y debes explicar los resultados, incluye
-también tus procedimientos/código de manera ordenada, y el código comentado.
-
-* Se evaluará la presentación de resultados (calidad de las gráficas, tablas,
-...).
-
-* Las sesión del Martes 11 de Mayo será destinada a responder dudas del
-examen. Para esto se reservará una media hora para dudas (dependerá de la agenda
-cuál será el momento mas oportuno para abrir el espacio). 
-
-* Se podrá usar el foro de discusión para realizar preguntas y afinar detalles 
-que no queden claros. 
-
-* No pueden compartir soluciones entre diferentes equipos.
-
-* Al entregar este examen afirmas que el trabajo se realizó sólo con tu
-compañeros de equipo. El material que utilizaste para apoyarte consistió de las
-notas en clase (pdfs en Canvas), el codigo fuente de las notas en el repositorio
-de Github.
-
-* Al entregar estás dando tu consentimiento para que bajo sospecha y suficiente
-evidencia de copia se anule tu evaluación.
-
-* La carpeta comprimida deberá incluir la resolución del examen también en
-formato `.html`. La evaluación será completamente sobre el `html` y el código
-fuente será utilizado para verificar detalles adicionales. Si el `html` no
-incluye alguna sección de la evaluación se tomará dicha sección como **no
-entregado**.
-
-**Ponderación:**
-
-El examen está compuesto por cuatro apartados cuyos pesos son los siguientes:  
-- Águilas    (15\%),  
-- Huracanes  (45\%),  
-- Omega-3    (15\%),  
-- Vacas      (25\%).  
 
 ```{r setup, include=FALSE}
 
-library(tidymodels)
-library(tidyverse)
-library(cmdstanr)
-library(rstanarm)
-library(bayesplot)
-library(loo)
+# Set up
+packages <- c("tidymodels", 
+              "tidyverse",
+              "cmdstanr",
+              "rstanarm",
+              "bayesplot",
+              "loo",
+              "patchwork",
+              "devtools", 
+              "scales",
+              "coda",
+              "mvtnorm",
+              "rethinking",
+              "MASS",
+              "experiment",
+              "magrittr",
+              "umap",
+              "vtable",
+              "tidybayes",
+              "modelr",
+              "arm",
+              "data.table",
+              "stargazer",
+              "pbapply",
+              "robustHD")
 
-library(patchwork)
-library(scales)
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning=FALSE, 
-                      fig.align = 'center', fig.width = 5, fig.height=3, cache = TRUE)
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+cbp5 <- c("#d0e1f9", "#84c1ff", "#3b7dd8", "#4d648d", "#283655")
+# Packages loading
+lapply(packages, 
+       library, 
+       character.only = TRUE)
+
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning=FALSE, 
+                      fig.align = 'center',
+                      fig.width = 4,
+                      fig.height=3, 
+                      cache = TRUE)
 comma <- function(x) format(x, digits = 2, big.mark = ",")
 theme_set(theme_linedraw())
+seed <- 333
+rstan_options (auto_write=TRUE)
+options (mc.cores=parallel::detectCores ()) 
+CORES=8
 ```
 
 
@@ -75,21 +83,36 @@ theme_set(theme_linedraw())
 Los datos contenidos en `MASS` (eagles) son registros intento de robo entre
 águilas blancas en el estado de Washington. Ve la ayuda para mayor detalle en el
 conjunto de datos:
-```{r}
 
-# library(rethinking)
-# data(eagles)
-# eagles %>% 
-#     head()
-
+```{r paged.print=TRUE}
+data(eagles)
+eagles$group<-seq(1:8)
+eagles
 ```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Variables**
+
+Y : number of successful attempts
+n : Total number of attempts
+p : Size of pirating eagle (Large or Small)
+A : Age of priating eagle (Immagure or Adult)
+V : Size of victim eagle (Large or Small)
+</div>
+
+Queremos modelar el siguiente fenómeno: los robos exitosos de salmón entre la
+población de águilas. 
 
 Mientras un águila se alimenta, a veces otra se abalanza y trata de robar el
 salmón. Llamemos al águila que se está alimentando la "víctima" y al ladrón el
 "pirata". Utiliza los datos disponibles para construir un GLM binomial para
 predecir los intentos exitosos de piratería.
 
-(a) Considera el modelo:
+Consideramos el modelo:
 
 $$
 \begin{align}
@@ -106,140 +129,1745 @@ tamaño corporal grande, y finalmente $A$ es una variable ficticia que indica si
 el pirata era o no un adulto. Ajusta el modelo anterior a los datos de las
 águilas con la herramienta de tu preferencia e interpreta las estimaciones. 
 
+Este es un modelo de regresión binomial con liga logit, por lo tanto
+
+$$
+p_i = \textsf{logit}^{-1}(\alpha + \beta_P P_i + \beta_V V_i + \beta_A A_i)
+$$
+Podemos interpretar el signo de los coeficientes el aumento o disminución de
+la probabilidad de éxito de un robo. Aplicando la liga inversa al intercepto, nos indica la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un aguila victima de tamaño grande. Si un intento tiene estas características, tendrá una distribución posterior de probabilidad de éxito con media 0.768. Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beat_A$ lo que implica que si existe un aguila pirata peque;a o el aguila victima es inmadura, entonces se reducia la probabilidad de una pesca exitosa. En cambio, si el aguila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
+
+
+Además, al obtener los intervalos posteriores de incertidumbre de los parámetros al 89%, se observa que ningún valor incluye el cero, por lo que podemos afirmar que los valores son significativos para el modelo. 
+
+```{r}
+set.seed(42)
+model<-stan_glm(cbind(y,n-y)~P+V+A,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+summary(model)
+
+posterior_interval(model,prob=.89,pars=c('(Intercept)','PS','VS','AI'))
+```
+
+
+El signo de los coeficientes representa el aumento (o disminución) de la
+probabilidad de éxito de robo. 
+
+*Intercepto*
+
+En este caso, aplicando la liga inversa al intercepto, obtenemos la probabilidad de éxito, dado que el pirata:
+
++ es de edad adulta, 
++ tiene tamaño grande,
++ y tiene como víctima a un águila de tamaño grande.
+
+Dada éstas carácteríticas, la distribución posterior de probabilidad de éxito tiene
+una media equivalente a $0.7532669$. 
+
+
+Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beta_A$ lo que implica que si existe un águila pirata pequeña o el águila victima es inmadura, entonces se reducia la probabilidad de una pesca exitosa. En cambio, si el aguila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Sin embargo, se puede dar un cambio aproximado al dividir entre 4, por lo tanto, tenemos una reducción aproximada del 80% si el águila pirata es pequeña, un aumento del 81% si el águila es victima es pequeña y una reducción del 25% si el águila es inmadura.  Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
+
+
+Además, al obtener los intervalos de alta densidad posteriores de incertidumbre de los parámetros al 89%, se observa que ningún valor incluye el cero, por lo que podemos afirmar que los valores son significativos para el modelo. 
+
+Podríamos suponer que un águila pequeña es más aguil y puede huir facilmente de un águila que busca robarle su pesca. Esta misma agilidad asociada al tamaño del águila aplica para el águila pirata, ya que es más probable que le pueda robar su pesca a otra águila si es de tamaño pequeño. También cuando el águila es inmadura, suponemos tiene menos experiencia y es victima fácil para otras águilas que le buscan robar su presa. 
+
 (b) Luego grafica las predicciones posteriores. Para esto calcula y muestra
 tanto: 1) la predicción de la probabilidad de éxito y su intervalo de
 credibilidad de 89\% para cada observación en los datos; como: 2) el número de
 éxitos y su intervalo del 89\%. ¿Qué información proporciona cada tipo de
 predicción posterior?
 
+
+
+```{r}
+eagles$group<-seq(1:8)
+#1)
+print("Intervalo de probabilidad de exito (media)")
+post_epred<-posterior_epred(model)
+posterior_interval(post_epred,prob=.89)
+print("Predicción de probabilidad de exito")
+invlogit(predict(model))
+ppc_stat_grouped( y = eagles$y/eagles$n,yrep =post_epred,group = eagles$group,freq = TRUE)
+#2)
+print("Intervalo de Número de éxitos")
+post_pred<-posterior_predict(model)
+posterior_interval(post_pred,prob=.89)
+print("Predicción de Número de éxitos (media)")
+invlogit(predict(model))*eagles$n
+ppc_stat_grouped( y = eagles$y,yrep =post_pred,group = eagles$group,freq = TRUE)
+```
+
+Para cada águila, graficamos la prediccion posterior del numero de exitos dados sus predictores al igual que su probabilidad de éxito. El valor resaltado T(y) es el valor real calculado entre número de éxitos entre intentos totales. El primer indicador, la probabilidad de éxito, nos dice si una pesca sera exitosa dados los predictores. El número de exitos representa el numero de éxitos dado el numero de intentos que hizo el águila y el resto de sus predictores. El valor resaltado T(y) es el valor real. Observamos que para cada águila varían tanto su probabilidad de éxito como su número de éxitos, ya que cambian sus predictores. 
+
+Observamos que las predicciones puntales (distribución posterior evaluado en la media) caen dentro de los intervalos de alta densidad de la distribución posterior, tanto de la probabilidad de éxito como del número de éxitos.
+
+
 (c) Ahora intenta mejorar el modelo. Considera una interacción entre el tamaño y
 edad de los piratas. Compara la capacidad predictiva de los modelos. Interpreta
 los resultados.
+
+
+```{r}
+model2<-stan_glm(cbind(y,n-y)~P+V+A+P:V+P:A+A:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+summary(model2)
+model3<-stan_glm(cbind(y,n-y)~P+V+A+P:A+A:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+summary(model3)
+model4<-stan_glm(cbind(y,n-y)~P+V+A+P:V+A:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+summary(model4)
+model4<-stan_glm(cbind(y,n-y)~P+V+A+P:A+A:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+summary(model4)
+model5<-stan_glm(cbind(y,n-y)~P+V+A+P:V,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+summary(model5)
+model6<-stan_glm(cbind(y,n-y)~P+V+A+P:A,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+summary(model6)
+model7<-stan_glm(cbind(y,n-y)~P+V+A+V:A,
+                data = eagles,
+                family = binomial(link = "logit"),
+                prior=normal(location = 0, scale = 1.5),
+                prior_intercept = normal(location = 0, scale = 0.5))
+summary(model7)
+loo1<-loo(model,k_threshold = 0.7)
+loo2<-loo(model2,k_threshold = 0.7)
+loo3<-loo(model3,k_threshold = 0.7)
+loo4<-loo(model4,k_threshold = 0.7)
+loo5<-loo(model5,k_threshold = 0.7)
+loo6<-loo(model6,k_threshold = 0.7)
+loo7<-loo(model7,k_threshold = 0.7)
+loo_compare(loo1,loo2,loo3,loo4,loo5,loo6,loo7)
+```
+Dado que son pocas combinaciones de interacciones de variables, decidimos intentar todos para determinar cual es el mejor modelo. De acuerdo con la métrica loo utilizando kfold al .7 de los datos observados, determinamos que el mejor modelo es el modelo 6. Este modelo representa el modelo base y la interacción entre tamaño del águila pirata y la edad de del águila victima. Los resultados de este modelo indica que la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un águila victima de tamaño grande es de 0.7020249 (intercepto). Esto representa una disminución comparado con probabilidad de éxito del modelo original. Para este nuevo modelo,aunque los valores cambian,  se mantienen los signos de los coeficientes de las variables individuales (PSmall,VSmall,AImmature), por lo que su efecto sobre la probabilidad será de forma negativa. El nuevo coeficiente que considera la interacción entre P y A (Psmall,AImmature) también tiene signo negativo, por lo que la probabilidad de éxito diminuirá en caso de que el águila pirata sea pequeña Y la águila victima sea inmadura.
+
+Podríamos suponer que cuando el águila es inmadura tiene menos experiencia y un águila pirata pequeña es más agil, por lo tanto facilmente puede robar la captura a un águila con menos experiencia. 
+
+En este caso, los intervalos de confianza, tanto de la probabilidad de éxito como de número de éxitos cambia.
+
+Si utilizamos otra métrica para evaluar las diferencias de la distribución posterior evaluada en las medias con respecto a los valores reales, notamos que el modelo 6 es mucho más preciso. Esta métrica es utilizada para medir el desempeño de modelos de regresión, por lo que también decidimos incluirla (por curiosidad e interpretabilidad). Calculando el MAE o error promedio absoluto tenemos que para el modelo original, se tiene una diferencia promedio de 1.291587 vs 0.5639608 del mejor modelo con interacción. 
+
+En conclusión, el modelo con interaccion da mejores resultados bajo la métrica Loo y MAE de la distribución posterior en las medias. 
+
+```{r}
+print("Intervalo de probabilidad de exito")
+post_epred<-posterior_epred(model6)
+posterior_interval(post_epred,prob=.89)
+print("Predicción de probabilidad de exito")
+invlogit(predict(model6))
+#2)
+print("Intervalo de Número de éxitos")
+post_pred<-posterior_predict(model6)
+posterior_interval(post_pred,prob=.89)
+print("Predicción de Número de éxitos")
+invlogit(predict(model6))*eagles$n
+print("MAE modelo Original")
+sum(abs(invlogit(predict(model))*eagles$n-eagles$y))/8
+print("Mae mejor modelo")
+sum(abs(invlogit(predict(model6))*eagles$n-eagles$y))/8
+```
+
 
 # Extensiones de modelos de conteo: huracanes
 
 En 2014, se publicó un artículo titulado [*"Female hurricanes are deadlier than
 male hurricanes"*](https://www.pnas.org/content/111/24/8782). Como sugiere el
 título, el documento afirmó que los huracanes con nombres femeninos han causado
-una mayor pérdida de vidas, y la explicación que se da es que las personas
-inconscientemente califican a los huracanes femeninos como menos peligrosos y,
-por lo tanto, es menos probable que se necesite evacuar. Los estadísticos
-criticaron duramente el artículo después de su publicación. En esta sección,
-explorarás los datos completos utilizados en el artículo y considerarás la
-hipótesis que los huracanes con nombres femeninos son más letales. Carga los
-datos con:
+una mayor pérdida de vidas. ¿La razón? Las personas inconscientemente califican 
+a los huracanes femeninos como menos peligrosos y,
+por lo tanto, es menos probable que se necesite evacuar.
+
+Los estadísticos criticaron duramente el artículo después de su publicación. 
+En esta sección, exploramos los datos completos utilizados en el artículo
+y consideramos la hipótesis siguiente:
+
+> Los huracanes con nombres femeninos son más letales.
+
+
+Para ello, primero nos familiarizamos los datos.
+
+
+```{r warning=FALSE, paged.print=TRUE}
+data(Hurricanes)
+Hurricanes %<>% 
+  mutate(
+    category=as.factor(category),
+    female=as.factor(female)
+  )
+Hurricanes %>% head()
+```
+
+Table: Sobre la base de datos 
+
+| Variables | Descripción|
+|:-----|:--------|
+|name |nombre otorgado al huracán
+|year| año en que aconteció el huracán
+|deaths | número de muertes
+|category | severidad del huracán
+|min_pressure | minimum pressure, a measure of storm strength; low is stronger
+|damage_norm | estimaciones normalizadas del costo de los daños (en dólares)
+|female | variable indicadora para un nombre femenino
+|femininity | escala de 1 al 11; dónde 1 es nombre totalmente masculino y 11 nombre totalmente femenino.
+
+Primero, procedemos con algunas estadísticas descriptivas.
+
+```{r}
+Hurricanes %>% 
+  ggplot(aes(x=deaths)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "Muertes causadas por Huracanes",
+       sutitle ="Periodo: 1950-2012",
+       y='Número de Huracanes',
+       x='Número de Muertes') +
+  theme_minimal()
+```
+```{r}
+Hurricanes %>% 
+  ggplot(aes(x=category,
+             y=deaths, 
+             group=category, 
+             color=category)) + 
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +
+    coord_flip()+
+    theme_minimal() +
+    labs(
+      color=NULL,
+      group=NULL,
+      x= "Categoría",
+      y = "Muertes"
+    )+
+    theme(
+      text = element_text(size=8), 
+      axis.ticks = element_blank(),
+      legend.position="bottom",    
+      axis.text.y = element_blank()
+    )+
+    scale_color_manual(values = cbp5)
+
+Hurricanes %>% 
+  ggplot(aes(x=female,
+             y=deaths, 
+             group=female, 
+             color=female)) + 
+    geom_boxplot() +
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
+    theme(
+      legend.position="none",
+      plot.title = element_text(size=11)
+    ) +
+    coord_flip()+
+    theme_minimal() +
+    labs(
+      color=NULL,
+      group=NULL,
+      x= "Nombre Femenino",
+      y = "Muertes"
+    )+
+    theme(
+      text = element_text(size=8), 
+      axis.ticks = element_blank(),
+      legend.position="bottom",    
+      axis.text.y = element_blank()
+    )+
+    scale_color_manual(values = cbp5)
+```
+
+```{r}
+Hurricanes %>% 
+ggplot(
+  aes(
+    x=category, 
+    y=deaths, 
+    fill=category
+    )
+  ) +
+  geom_boxplot() +
+  facet_grid(female ~ .,
+             labeller = labeller(female = c('0'="Masculino",
+                                            '1'="Femenino"))) +
+  theme_minimal()+
+  labs(
+    fill=NULL,
+    x= "Categoría",
+    y = "Muertes"
+    )+
+  theme(
+    text = element_text(size=8), 
+    axis.ticks = element_blank(),
+    legend.position="bottom",    
+    axis.text.y = element_blank()
+    )+
+  coord_flip()+
+  scale_fill_manual(values = cbp5)
+```
+```{r}
+summary(Hurricanes$deaths)
+```
+
+Identificamos que el número de muertes provocadas por los huracanes es, en promedio, 
+20.65, ---número muy cercano al tercer cuartil. Esto sugiere que solamente 25 por 
+ciento de los huracanes causan más de 20 muertes. Por ello, dada la distribución 
+de nuestra variable dependiente, parece razonable pensar que el problema puede ser 
+modelado como una poisson.
+
+## Modelos poisson simples: feminidad como predictor vs solo intercepto
+
+Siguiendo la hipótesis inicial de los autores -- que los huracanes con nombres femeninos son más letales--, 
+en esta implementación, en lugar de centrar la variable femenidad con respecto
+al promedio, vale la pena reescalarla de tal forma que incluya el cero. Esto simplificará
+nuestro análisis en torno a la hipótesis inicial. 
+
+
+### Reescalando la variable `feminidad`
+
+Primero, al reescalar la variable *feminidad*, observamos que el dominio de nuestra variable
+ahora se reduce a una escala del 0 al 10.
+
+```{r}
+# Reescalando para tener el 0 como punto de referencia de masculinidad 
+# en el nombre
+Hurricanes %<>% 
+  mutate(femininity=femininity-1)
+summary(Hurricanes$femininity)
+```
+
+### Modelos
+
+Implementamos dos especificaciones: una que considera como único predictor a la
+variable feminidad y otra que solo considera al intercepto. En ambos casos,
+dado nuestro conocimiento limitado del problema y todo lo relacionado con los
+el fenómeno natural que queremos modelar, utilizamos como distribuciones prioris 
+las default de Stan.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+m_hurricanes_a <- list()
+m_hurricanes_a[[1]] <- stan_glm(
+  deaths~femininity,
+  family = poisson(link='log'), 
+  seed=seed,
+  data=Hurricanes
+  )
+m_hurricanes_a[[2]] <- stan_glm(
+  deaths~1,
+  family = poisson(link='log'), 
+  seed=seed,
+  data=Hurricanes
+  )
+```
 
 
 ```{r}
-# data(Hurricanes)
-# Hurricanes %>% 
-#     head()
+n_hurricanes_a <- c("Modelo poisson: un predictor", "Modelo poisson: solo intercepto")
+names(m_hurricanes_a) <- n_hurricanes_a
+
+pblapply(m_hurricanes_a, summary, digits=3)
 ```
 
-Familiarízate con las columnas inspeccionando la ayuda `?Hurricanes`. En este
-problema, te concentrarás en predecir muertes usando la feminidad de cada nombre
-del huracán. 
+### Coeficientes e intervalos de probabilidad
 
-a) Ajustaremos e interpretaremos el modelo más simple posible, un
-modelo de Poisson de muertes utilizando la feminidad como predictor. Puede
-utilizar quap o ulam. Compara el modelo a un modelo de muertes Poisson con sólo
-intercepto. ¿Qué tan fuerte es la asociación entre la feminidad del nombre y el
-número de muertes? ¿Qué tormentas ajustan bien con el modelo? ¿Qué tormentas son
-las que no son tan fáciles de predecir?
+Al 0.89 por ciento de probabilidad, los intervalos de probabilidad de ambos modelos
+no contienen al cero. En específico, el modelo en el cual se incluye a la 
+variable feminidad como predictora sugiere que
+**existe una relación positiva y grande entre feminidad y el número de muertes causadas por un huracán**.
 
-b) Los conteo casi siempre están demasiado dispersos en relación con una
-distribución Poisson. Así que ajusta un Modelo gamma-Poisson (también conocido
-como binomial-negativo) para predecir muertes utilizando la feminidad. Demuestra
-que el modelo con sobre-dispersión ya no muestra un resultado positivo tan
-preciso entre feminidad y muerte, con un intervalo de 89% que se superpone cero.
-¿Puedes explicar por qué la asociación disminuyó?
 
-c) En los datos, hay dos medidas del potencial de letalidad de un huracán:
-`damage_norm` y `min_pressure`. Consulta `?Hurricanes`. Hace algo de sentido
-imaginar que la feminidad de un nombre importa más cuando el huracán es en sí
-mismo mortal. Esto implica una interacción entre la feminidad y posiblemente una
-o las dos `damage_norm` y `min_pressure`. Ajusta una serie de modelos evaluando
-estas interacciones. Interpreta y compara los modelos. Al interpretar las
-estimaciones, te puede ayudar a generar predicciones que contrasten los
-huracanes con nombres masculinos y femeninos. ¿Son probables los coeficientes?
-
-d) En el artículo original sobre huracanes, se utilizó directamente el daño por
-tormenta (`damage_norm`). Esta suposición implica que la mortalidad aumenta
-exponencialmente con aumento lineal en la fuerza de la tormenta. Esto debido a
-que en regresión Poisson usamos un enlace logarítmico. Entonces, vale la pena
-explorar una hipótesis alternativa: que el logaritmo de la fuerza de la tormenta
-es lo que importa. Explora esto usando el logaritmo de `damage_norm` como un
-predictor. Usando la mejor estructura de modelo del inciso anterior, compara un
-modelo que usa `log(damage_norm)` a un modelo que usa `damage_norm`
-directamente. Compara la capacidad predictiva, así como sus predicciones
-implícitas. ¿Qué es lo que concluyes?
-
-# Inferencia Causal: experimentos aleatorizados
-
-Distribuciones muestrales bajo aleatorización: Utilice la covariable y el
-potencial de salida (*potential outcome*) de los datos en la tabla 18.1 del
-libro *Regresion and Other Stories*. Abajo viene una versión simplificada
-(aunque hacen falta un par más, incorporalas):
 
 ```{r}
+lapply(m_hurricanes_a, posterior_interval, prob=0.89)
+lapply(m_hurricanes_a, mcmc_areas, prob=0.89)
+```
 
-omega <- tibble(female = factor(rep(rep(c(1,0), each = 2), 2)), 
-       age    = rep(c(4,5,6,7), each = 2) * 10, 
-       treatment = factor(rep(c(0,1), each = 4)), 
-       outcome = rep(c(140, 150, 155, 160), each = 2))
+**Modelo con único predictor: Feminidad**
 
-omega %>% head()
++ $\beta_O$:  el logaritmo de la cuenta esperada para el número de muertes causadas
+por huracanes con nombres completamente masculinos es `r toString(round(as.vector(coef(m_hurricanes_a[[1]])[1]),2))`.
++ $\beta_1$:  en promedio, un aumento en una unidad en la "feminidad" de un nombre,
+está asociado con un aumento de `r toString(round((exp(as.vector(coef(m_hurricanes_a[[1]])[2]))-1)*100,2))` 
+por ciento en el número de muertes.
+
+### Distribución posterior predictiva
+
+Ahoras interesa contrastar los densidad de los datos reales 
+con las distribuciones posteriores predictivas. Identificamos que ambos modelos
+no se ajsutan de manera adecuada a los datos reales.
+
+```{r}
+plot_pp_check <- function(model, type, title){
+    pp_check(model, plotfun = type) +
+        ggtitle(title) +
+        theme(
+            plot.title = element_text(size = 10)
+            )
+    }
+lapply(
+    m_hurricanes_a, 
+    plot_pp_check,
+    "dens_overlay", 
+    "Distribución de muertes reales vs. Distribución Posterior Predictiva"
+    )
 
 ```
 
-como punto de partida para considerar distribuciones de aleatorización de cuatro
-diseños diferentes mediante la creación de simulaciones en `R`.
 
-Comenta sobre el sesgo relativo y la eficiencia para cada uno de los siguientes
-diseños:
-• Diseño completamente aleatorizado,
-• Diseño aleatorio usando bloques por los cuatro participantes mayores frente a
-los cuatro más jóvenes,
-• Diseño de pares combinados,
 
-utilizando cada una de las siguientes estimaciones:
-• Diferencia de medias,
-• Regresión del indicador de tratamiento y la edad,
-• Regresión del indicador de tratamiento, edad y sexo,
-• Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento
+### Comparativo de modelos
+
+A pesar del débil ajuste de los dos modelos antes propuestos a los datos, es 
+de nuestro interés comparar ambos modelos.
+```{r}
+loos_a <- pblapply(m_hurricanes_a, loo, k_threshold = 0.7)
+names(loos_a) <- n_hurricanes_a
+```
+
+```{r}
+loo_compare(loos_a) %>% as.data.frame()
+```
+
+Resulta que el modelo con mejor capacidad predictiva es el que incluye
+a la variable feminidad como variable explicativa.
+
+Finalmente, por todo lo anterior, más lo observado en las siguientes dos gráficas,
+podemos concluir que ningún huracán se ajusta bien con los modelos. Esto se corrobora
+puesto que al graficar el número de muertes reales contra el promedio de número de
+muertes obtenidas por el modelo, visualmente notamos que la relación entre ambas
+variables dista mucho de ser igual a 45 grados.
+
+```{r}
+lapply(
+    m_hurricanes_a, 
+    plot_pp_check, 
+    "scatter_avg",
+    "Muertes reales y muertes promedio de obtenidas"
+    )
+```
+
+
+## Modelo gamma-poisson 
+
+Los conteo casi siempre están demasiado dispersos en relación con una distribución 
+Poisson. Por ello, ahora ajustamos un modelo gamma-poisson para predecir muertes
+utilizando la feminidad. 
+
+**Definición del modelo**
+
+$$y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{Femenidad}}, \phi)$$
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+n_hurricanes_b <- c('Modelo gamma poisson: con sobre-dispersión')
+m_hurricanes_b <- list()
+m_hurricanes_b[[1]] <- stan_glm(
+    deaths ~ 1 + femininity ,
+    data = Hurricanes, 
+    family = neg_binomial_2(link = "log"), 
+    seed = seed,
+    chains = 4
+    )
+names(m_hurricanes_b)<- n_hurricanes_b
+```
+
+```{r}
+summary(m_hurricanes_b[[1]], digits=3)
+```
+
+### Distribución posterior predictiva
+
+Comparado con los modelos poisson simples implementados previamente, 
+en la siguiente gráfica observamos que la distribución predictiva posterior de
+este modelo, con una gamma poisson, se ajusta mejor
+a los muertes reales.
+
+
+```{r}
+m_hurricanes_b[[1]] %>% 
+pp_check(plotfun = "dens_overlay") +
+    labs(
+        title ="Distribución Real vs la Predictiva Posterior",
+        y="Densidad",
+        x="Muertes"
+        )+
+    theme_minimal()+
+    theme(
+      plot.title = element_text(size=10),
+      text = element_text(size=8), 
+      axis.ticks = element_blank()
+    )
+```
+
+Observando el intervalo de probabilidad al 89 por ciento, identificamos que, contrario 
+a lo obtenido en las dos especificaciones anteriores, este modelo con sobre-dispersión
+ya no muestra un resultado positivo tan preciso entre feminidad y muerte, puesto que el 
+intervalo ahora contiene al cero.
+
+```{r}
+m_hurricanes_b[[1]] %>% 
+    posterior_interval(prob = 0.89) %>% 
+    as.data.frame()
+```
+Lo anterior, lo podemos corroborar también visualmente.
+
+```{r}
+m_hurricanes_b[[1]] %>% 
+    mcmc_areas(prob_outer = .999) + 
+    ggtitle("Distribución posterior de los coeficientes")+
+    theme_minimal()+
+    theme(
+      plot.title = element_text(size=10),
+      text = element_text(size=8), 
+      axis.ticks = element_blank(),
+    )
+```
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+En la especificación inicial (modelo poisson simple), al modelar la media, implícitamente
+se modeló la varianza, por la siguiente relación: 
+
+$$E[Y] = Var[Y]$$.
+
+Sin embargo, como se demostró en la estadística descriptiva, la distribución de
+las muertes registradas no cumple esa relación, puesto que la media no coincide con la varianza.
+
+En ese sentido, lo recomendable es modelar la varianza y la media por separado, justo lo 
+que se modela con un modelo como el *binomial-negativo*, dónde al tener un parámetro de 
+*sobre-dispersión*, se modela de manera independiente la media y la varianza. Por ello,
+en esta nueva especificación, la asociación entre feminidad y muerte disminuye.
+
+</div>
+
+## Modelos con interraciones
+
+En los datos, hay dos medidas del potencial de letalidad de un huracán: `damage_norm` 
+y `min_pressure`.  Hace algo de sentido imaginar que la feminidad de 
+un nombre importa más cuando el huracán es en sí mismo mortal. 
+Esto implica una interacción entre la feminidad y posiblemente una 
+o las dos `damage_norm` y `min_pressure`.A continuación, ajustamos los siguientes 
+tres modelos para evaluar esta relación.
+
+
+> Modelo con interacción entre femininity y damage_norm_sd (c.1)
+
+$$y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{feminidad}+\beta_2\text{damage_norm}+
+\beta_3\text{feminidad * damage_norm}}, \phi)$$
+
+> Modelo con interacción entre femininity y min_pressure_sd (c.2)
+
+$$ y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{feminidad}+\beta_2\text{min_pressure}+
+\beta_3\text{feminidad * min_pressure}}, \phi)$$
+
+> Modelo con interacción entre  femininity, min_pressure_sd y damage_norm_sd (c.3)
+
+$$y_i \sim \text{Bin Neg}(e^{X^T \beta}, \phi),$$
+
+dónde:
+$$ X\beta  = \beta_0+\beta_1\text{feminidad}+\beta_2\text{min_pressure}+ \\
+\beta_3\text{damage_norm}
++ \beta_4\text{feminidad * min_pressure}+ \\ \beta_5\text{feminidad * damage_norm}
++ \beta_6\text{feminidad * min_pressure * damage_norm}$$
+
+Primero, por cuestiones de interpretabilidad, estandarizamos ambas variables.
+
+```{r}
+Hurricanes %<>% 
+  mutate(
+    damage_norm_sd=standardize(damage_norm),
+    min_pressure_sd=standardize(min_pressure)
+         )
+```
+
+```{r paged.print=TRUE}
+Hurricanes %>% 
+  dplyr::select(
+    damage_norm_sd,
+    min_pressure_sd
+  ) %>% 
+  head()
+```
+
+
+La estimación para los modelos c.1, c.2 y c.3 se muestran a continuación:
+
+```{r include=FALSE}
+m_hurricanes_c <- list()
+m_hurricanes_c[[1]] <- stan_glm(deaths ~ 1 + femininity + damage_norm_sd + femininity:damage_norm_sd,
+                                data = Hurricanes, 
+                                family = neg_binomial_2(link = "log"), 
+                                seed = seed)
+m_hurricanes_c[[2]] <- stan_glm(deaths ~ 1 + femininity + min_pressure_sd + femininity:min_pressure_sd,
+                                data = Hurricanes, 
+                                family = neg_binomial_2(link = "log"), 
+                                seed = seed)
+
+m_hurricanes_c[[3]] <- stan_glm(deaths ~ 1 + femininity + min_pressure_sd + damage_norm_sd +
+                                femininity:min_pressure_sd + femininity:damage_norm_sd +
+                                femininity:min_pressure_sd:damage_norm_sd,
+                                data = Hurricanes, 
+                                family = neg_binomial_2(link = "log"), 
+                                seed = seed)
+```
+
+```{r}
+n_hurricanes_c <- c("Modelo interacción: femininity:damage_norm_sd", 
+                    "Modelo interacción: femininity:min_pressure_sd",
+                    "Modelo interacción: femininity:min_pressure_sd:damage_norm_sd")
+names(m_hurricanes_c) <- n_hurricanes_c
+
+pblapply(m_hurricanes_c, summary, digits=3)
+```
+
+### Interpretación de coeficientes
+
+¡Recordar que previamente rescalamos nuestros datos!
+
+```{r}
+lapply(m_hurricanes_c, posterior_interval, prob=0.89)
+lapply(m_hurricanes_c, mcmc_areas, prob=0.89)
+```
+
+> Modelo con interacción entre femininity y damage_norm_sd (c.1)
+
++ $\beta_0$: en promedio, el logaritmo de la cuenta esperada para el número de muertes
+causadas por huracanes (con nombres con nula feminidad y costos de daños promedio),
+es  igual a `r toString(round(as.vector(coef(m_hurricanes_c[[1]])[1]),2))`. 
++ $\beta_1$: ante un aumento en una unidad en la feminidad del nombre de un huracán,
+se espera, en promedio, un aumento en 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[1]])[2]))-1)*100,2))` por ciento 
+en el número de muertes; esto con respecto al caso base: huracanes con nombres con nula 
+feminidad y costos de daños promedio.
++ $\beta_2$: ceteris paribus, ante un aumento en una desviación estándar en los costos de 
+daños promedios asociados al huracán, se espera un aumento promedio de
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[1]])[3]))-1)*100,2))` por ciento
+en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
+feminidad y costos de daños promedio.
++ $\beta_3$: ceteris paribus, se espera un aumento promedio de 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[1]])[3])+as.vector(coef(m_hurricanes_c[[1]])[4]))-1)*100,2))`
+por ciento en el número de muertes; esto, con respecto al caso base: huracanes
+con nombres con femenidad igual a 1 y costos de daños promedio.
+
+> Modelo con interacción entre femininity y min_pressure_sd (c.2)
+
++ $\beta_0$: en promedio, el logaritmo de la cuenta esperada para el número de muertes
+causadas por huracanes (con nombres con nula feminidad y con intensidad promedio),
+es igual a `r toString(round(as.vector(coef(m_hurricanes_c[[2]])[1]),2))`. 
++ $\beta_1$: ante un aumento en una unidad en la feminidad del nombre de un huracán,
+se espera, en promedio, un aumento en 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[2]])[2]))-1)*100,2))` por ciento 
+en el número de muertes; esto con respecto al caso base: huracanes con nombres con nula 
+feminidad e intensidad promedio.
++ $\beta_2$: ceteris paribus, ante un aumento en una desviación estándar de la intensidad promedio
+del huracán, se espera una reducción promedio de
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[2]])[3]))-1)*100,2))` por ciento
+en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
+feminidad e intensidad promedio.
++ $\beta_3$: ceteris paribus, se espera una reducción promedio de 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[2]])[3])+as.vector(coef(m_hurricanes_c[[2]])[4]))-1)*100,2))`
+por ciento en el número de muertes; esto, con respecto al caso base: huracanes
+con nombres con femenidad igual a 1 e intensidad promedio.
+
+> Modelo con interacción entre  femininity, min_pressure_sd y damage_norm_sd (c.3)
+
++ $\beta_0$: en promedio, el logaritmo de la cuenta esperada para el número de muertes
+causadas por huracanes (con nombres con nula feminidad e intensidad y costos por daños promedio),
+es igual a `r toString(round(as.vector(coef(m_hurricanes_c[[3]])[1]),2))`. 
++ $\beta_1$: ante un aumento en una unidad en la feminidad del nombre de un huracán,
+se espera, en promedio, un aumento en 
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[3]])[2]))-1)*100,2))` por ciento 
+en el número de muertes; esto con respecto al caso base: huracanes con nombres con nula 
+feminidad, intensidad y costos por daños promedio
++ $\beta_2$: ceteris paribus, ante un aumento en una desviación estándar de la intensidad promedio
+del huracán, se espera una reducción promedio de
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[3]])[3]))-1)*100,2))` por ciento
+en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
+feminidad y costos por daños promedio.
++ $\beta_3$: ceteris paribus, ante un aumento en una desviación estándar en el costo por daños
+promedio, se espera un aumento promedio de
+`r toString(round((exp(as.vector(coef(m_hurricanes_c[[3]])[4]))-1)*100,2))` por ciento
+en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
+feminidad e intensidad promedio.
+
+
+> Probabilidad de los coeficientes
+
+En este apartado, analizamos la probabilidad de los coeficientes --entendida como 
+la exclusión del cero dentro de intervalo de probabilidad. Para ello, observamos los 
+intervalos de probabilidad (al 89 por ciento) para cada uno de los modelos con 
+interacción.
+
+
+```{r}
+pblapply(m_hurricanes_c, posterior_interval, prob=0.89) 
+```
+
++ Para el modelo donde se incluye la interacción  *feminidad:damage_norm*, vemos que el
+único coeficiente probable al 89 por ciento, aparte del intercepto, es el asociado a damage_norm_sd.
+
++ Para el modelo donde se incluye la interacción  *femininity:min_pressure_s*, vemos que
+todos los coeficientes son probables al 89 por ciento. 
+
++ Para el modelo donde se incluye la interacción  *femininity:min_pressure_s:damage_norm*, 
+vemos que los únicos coeficientes probables al 89 por ciento, son los asociados a min_pressure_sd, 
+femininity:damage_norm_sd y femininity:min_pressure_sd:damage_norm_sd. 
+
+
+```{r}
+lapply(
+    m_hurricanes_c, 
+    plot_pp_check,
+    "dens_overlay", 
+    "Distribución de muertes reales vs. Distribución Posterior Predictiva"
+    )
+```
+
+Finalmente, evaluamos la capacidad predictiva de los modelos:
+
+
+```{r}
+loos_c <- pblapply(m_hurricanes_c, loo, k_threshold = 0.7)
+names(loos_c) <- n_hurricanes_c
+
+loo_compare(loos_c) %>% as.data.frame()
+```
+
+De acuerdo con la tabla presentada, el mejor modelo, en términos de su capacidad 
+predictiva es el modelo que incluye la interacción `femininity:min_pressure_sd:damage_norm_sd`;
+sin embargo, previamente habíamos identificado que los modelso con interacciones 
+`femininity:min_pressure_sd` y
+`femininity:min_pressure_sd:damage_norm_sd` presentan problemas para el 
+parámetro de forma $k$ de la distribución de pareto generalizada. En razón a ello, 
+siendo que la diferencia entre el primer mejor "modelo" y el segundo mejor modelo no 
+es tan grande, optamos por el modelo que incluye la interración `femininity:damage_norm_sd`.
+La bondad de este modelo, además de no presentar problemas en la distribución
+de pareto generaliza, es que al ser más parsimonioso, facilita la interpretación
+de los coeficientes.
+
+
+## Hipótesis alternativa
+
+
+En el artículo original sobre huracanes, se utilizó directamente el daño por 
+tormenta (`damage_norm`). Esta suposición implica que la mortalidad aumenta 
+exponencialmente ante un aumento lineal en la fuerza de la tormenta.
+Esto debido a que en regresión Poisson usamos un enlace logarítmico. Entonces, 
+vale la pena explorar una hipótesis alternativa: 
+
+> el logaritmo de la fuerza de la tormenta es lo que importa.
+
+Por ello, ahora exploraremos con la inclusión del logaritmo de `damage_norm` como 
+un predictor. Luego, lo compararemos con todos los modelos antes especificados, con
+particular énfasis en una comparación con el modelo dónde se incluye la interacción
+`femininity:damage_norm_sd`.
+
+**Especificación del Modelo:**
+$$y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{feminidad}+\beta_2\log(\text{damage_norm})+
+\beta_3\text{feminidad} * \log\text{(damage_norm})}, \phi)$$
+
+
+```{r warning=FALSE, include=FALSE}
+m_hurricanes_d <- list()
+m_hurricanes_d[[1]] <- stan_glm(
+  deaths ~ 1 + femininity + log(damage_norm) +
+  femininity*log(damage_norm),
+  data = Hurricanes, 
+  family = neg_binomial_2(link = "log"), 
+  seed = seed)
+
+names(m_hurricanes_d)<- c("Modelo log(damage_norm)")
+```
+
+```{r}
+summary(m_hurricanes_d[[1]])
+```
+
+```{r}
+m_hurricanes_d[[1]] %>% 
+pp_check(plotfun = "dens_overlay") +
+    labs(
+        title ="Distribución Real vs la Predictiva Posterior",
+        y="Densidad",
+        x="Muertes"
+        )+
+    theme_minimal()+
+    theme(
+      plot.title = element_text(size=10),
+      text = element_text(size=8), 
+      axis.ticks = element_blank()
+    )
+```
+
+Ahora estudiamos la significancia de los coeficientes del que incluye el logaritmo de `damage_norm.`
+Para esto, obsevamos el intervalo de probabildiad al 89 por ciento.
+
+```{r}
+posterior_interval(m_hurricanes_d[[1]], prob = 0.89)
+```
+
+
+```{r}
+m_hurricanes_d[[1]] %>% 
+mcmc_areas(prob_outer = 0.89) + 
+  labs(
+    title= "Distribución posterior de los coeficientes."
+    )+
+  theme_minimal() +
+  theme(
+    text = element_text(size=8), 
+    axis.ticks = element_blank(),
+    legend.position="bottom",    
+    axis.text.y = element_blank()
+  )
+
+```
+
+Finalmente, comparamos la capacidad predictiva de modelo que emplea la transformación 
+logarítmica, contra los modelos previos. Se encuentra que el modelo con mejor 
+capacidad predictiva es precisamente el modelo que incluyte la transformación 
+logarítmica de `damage_norm`.
+
+```{r}
+loos_d<- lapply(m_hurricanes_d, loo)
+names(loos_d) <- c("Modelo log(damage_norm)")
+```
+
+```{r}
+loo_compare(c(loos_c, loos_d)) %>%  as.data.frame()
+```
+
+# Inferencia causal: experimentos aleatorizados
+
+La importancia del omega3, como suplemento alimenticio que incide positivamente en 
+la reducción de la presión arterial, ha sido un tema recurrente en los últimos años.
+Para ello, diversos experimentos se han ejecutado con el fin de cuantificar los efectos
+reales del suplemento.
+
+```{r}
+par(mar=c(0,0,0,0))
+plot(c(-.5,4), c(0,1.8), xlab="", ylab="", xaxt="n", yaxt="n", bty="n", type="n")
+text(0, 1, "covariadas", cex=.8)
+text(3.5, 1.0,  "Outcome=\n Presión Arterial", cex=1)
+text(c(0,2,3.5), c(1.6,1.8,1.6), c("Antes","","Después"), cex=1)
+text(1.9, .72, "Placebo ", cex=1, srt=-16)
+text(1.9, 1.30, "Omega3", cex=1, srt=15.4)
+arrows(c(1.1,1.1), c(1,1), c(3.0,3.0), c(.5, 1.5))
+arrows(-.3,.2,4,.2, length=.05)
+text(1.8, .1, "Tiempo", cex=1)
+```
+
+En el siguiente apartado, vamos a explorar distintos tipos de diseños
+experimentales y sus posibles implicaciones, en términos de sesgo relativo y eficiencia.
+
+Para ello, usamos los datos provenientes de la tabla 18.1 del libro *Regression and Other Stories*, 
+misma que incluye algunas covariables y dos potenciales de salida (*potential outcomes*)
+---condicionales a la asignación a tratamiento (o no) de los individuos.
+
+```{r paged.print=TRUE}
+omega <- tibble(
+  id=seq(1,8),
+  twins= factor(c(rep(1, 2), rep(2, 2), rep(3, 2), rep(4, 2))),
+  female = factor(rep(rep(c(1,0), each = 2), 2)), 
+  age = rep(4:7 * 10, each = 2),
+  treatment = factor(rep(c(0,1), each = 4)),
+  y_0 = rep(14:17 * 10, each = 2),
+  y_1= c(rep(135,2), rep(140,2), rep(155,2), rep(160,2))
+  )
+omega
+```
+
+En este caso, dado que se trata de un ejemplo de clase, para cada 
+individuo, contamos con ambos resultados potenciales $Y=\{Y_0, Y_1\}$.
+```{r}
+ate_real <- omega %>% 
+  mutate(y = y_1 - y_0) %>% 
+  summarise(ate_real = mean(y))
+```
+
+Por ello, contrario a lo que ocurriría en un experimento real, sabemos que el 
+efecto promedio del tratamiento es de `r toString(ate_real)`. Esto se interpreta 
+de la siguiente manera:
+
+> ceteris paribus, la inclusión de omega3 en la dieta
+alimenticia está asociada con una disminución promedio de 7.5  mmHg en la
+presión arterial de las personas. De ahora en adelante, utilizamos este 
+dato como nuestro *benchmark* para medir el sesgo relativo.
+
+Para la aleatorización y asignación al grupo de tratamiento, consideramos 
+cinco diseños diferentes:
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
++ Diseño completamente aleatorizado
++ Diseño aleatorio usando bloques
++ Diseño de pares combinados: sexo
++ Diseño de pares combinados: edad
++ Diseño de pares combinados: gemelos
+
+</div>
+
+Una vez generado cada uno de los diseños, es de nuestro interés verificar
+que nuestra aleaterozación fue satisfactoria (en el sentido de independencia);
+para ello,  presentamos distintas tablas de balance; con estas tablas, 
+típicamente se muestra la diferencia en las medias entre tratamiento y 
+control para las distintas covariadas ($X_i$), medidas previo al tratamiento,
+esperando que la mayoría de ellas no sean estadísticamente distintas. 
+Esta tabla va acompañada con una ayuda visual.
+
+Luego, calculamos los efectos promedios del tratamiento, para cada uno
+de los diseño implementados y presentamos los resultados de las 
+siguientes especificaciones:
+
++ Regresión del indicador de tratamiento y la edad,
++ Regresión del indicador de tratamiento, edad y sexo,
++ Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento
 $\times$ sexo.
 
-# Inferencia Causal y Modelos de Regresión: vacas 
+```{r funciones ejercicios 3}
 
-*Aleatorización desordenada*: los datos de `vacas.txt` contiene datos de un
-experimento que se llevó a cabo con 50 vacas para estimar el efecto de un
-complemento alimenticio en 6 resultados relacionados con la cantidad de grasa
-láctea producida por cada vaca. Se consideraron cuatro dietas (tratamientos),
+# Funciones auxiliares
+
+mean_diff_outcomes <- function(df){
+  # Calcula diferencia de medias
+  y_t<- df %>% filter(treatment==1) %>% dplyr::select(outcome) %>% colMeans()
+  y_c <- df %>% filter(treatment==0) %>% dplyr::select(outcome) %>% colMeans()
+  mean_diff = as.numeric(y_t-y_c)
+  return(mean_diff)
+}
+
+first_model_omega <- function(my_data){
+  # Primera especificación: indicador de tratamiento y la edad
+  model <- stan_glm(
+    outcome ~ treatment+age,
+    data = my_data,
+    refresh = 0,
+    iter = 3000,
+    seed=seed
+  )
+return(model)
+}
+
+second_model_omega <- function(my_data){
+  # Segunda especificación: indicador de tratamiento, edad y sexo
+  model <- stan_glm(
+    outcome ~ treatment+age+female,
+    data = my_data,
+    refresh = 0,
+    iter = 3000,
+    seed=seed
+  )
+return(model)
+}
+
+third_model_omega <- function(my_data){
+  # Tercera especificación : indicador de tratamiento, edad, sexo e interacción 
+  model <-stan_glm(
+    outcome ~ treatment + age + female + female*treatment,
+    data = my_data,
+    refresh = 0,
+    iter = 5000,
+    seed=seed
+)
+return(model)
+}
+
+tablas_balance_omega <- function(data){
+  # Verificando balance en asignación
+data <- subset(data, select=c("age",
+                               "female",
+                               "treatment"
+                               ))
+data %<>% 
+  mutate(
+    treatment =ifelse(treatment==1, 'Grupo de Tratamiento', 'Grupo de Control')
+  ) %>% 
+  dplyr::rename('Asignación'=treatment)
+labs <- c('Edad',
+          'Género')
+table_balance <-st(data, 
+                   group = 'Asignación',
+                   summ = list(
+                     c('notNA(x)','mean(x)')),
+                   summ.names = list(
+                     c('Total','Promedio/Porcentaje')
+                   ),
+                   labels =labs,
+                   group.test = TRUE)  
+                  
+return(table_balance)  
+}
+
+balance_graphs <- function(data, title){
+# Acompañamiento visual  
+age_balance <- data %>% 
+  ggplot(aes(age))+
+  geom_bar(fill=cbp5[2]) +
+  facet_grid(treatment ~ .,
+             labeller = labeller(treatment = c("1" ="Tratamiento",
+                                               "0"= "Control"))) +            
+  theme_minimal()+
+  labs(
+    title=title,
+    y=NULL,
+    x='Edad'
+  )+
+  theme(
+    plot.title = element_text(size=10),
+    text = element_text(size=7), 
+    axis.ticks = element_blank(),
+    axis.text.x = element_text(angle = 45),
+    axis.text.y = element_blank(),
+    legend.position="bottom"
+    ) +
+  geom_text(
+    stat='count', 
+    aes(label=..count..), 
+    vjust=-1, 
+    size=2
+    ) +
+  ylim(0,3)
+gender_balance <- data %>% 
+  ggplot(aes(female), group=treatment) +
+  geom_bar(fill=cbp5[2]) +
+  facet_grid(treatment ~ .,
+             labeller = labeller(treatment = c("1" ="Tratamiento",
+                                               "0"= "Control")))+
+  theme_minimal()+
+  labs(
+    title=NULL,
+    y=NULL,
+    x='Género'
+  )+
+  theme(
+    plot.title = element_text(size=13),
+    text = element_text(size=7), 
+    axis.ticks = element_blank(),
+    axis.text.x = element_text(angle = 45),
+    axis.text.y = element_blank(),
+    legend.position="bottom"
+    ) +
+  geom_text(
+    stat='count', 
+    aes(label=..count..), 
+    vjust=-1, 
+    size=2
+    ) +
+  ylim(0,3)
+
+return(age_balance + gender_balance)
+}
+
+```
+
+## Diseños y Revisión de Balance
+
+### Diseño Completamente Aleatorizado
+
+Primero, implementamos una asignación completmente aleatorizada, donde la probabilidad 
+de ser asignado a tratamiento es la misma para cada unidad en nuestra muestra.
+
+```{r paged.print=TRUE}
+set.seed(seed)
+complete_rand.omega <- omega %>% 
+  mutate(treatment=sample(rep(c(0,1), length=n())))
+complete_rand.omega %<>% 
+  mutate(outcome=ifelse(treatment==1, y_1, y_0))
+complete_rand.omega$treatment=as.factor(complete_rand.omega$treatment)
+```
+
+Sabemos que la aleatorización asegura que `en promedio` nuestros grupos
+estarán balanceados; sin embargo, dado que nuestra base de datos consta de sólo 8 observaciones,
+el desbalance puede ser grande.
+
+
+```{r results='asis'}
+tablas_balance_omega(complete_rand.omega)
+```
+
+Gracias a los controles recopilados en la línea basal, podemos dar evidencia de que
+nuestra muestra no está balanceada en términos de edad. Esto podría llevar a complicaciones
+puesto que, sabemos que el problema fundamental de la inferencia causal es la imposibilidad
+de observar ambos *outcomes* potenciales para un individuo dado. Sin un contrafactual
+creíble, nuestras estimaciones de los efectos promedios del tratamiento podrían sufrir de 
+problemas de sesgos por variables omitidas.
+
+```{r, fig.height=4.5, fig.width=4, fig.align='center'}
+balance_graphs(complete_rand.omega, 'Balance Check en Observables: Completa Aleatorización')
+```
+### Remuestreo Aleatorio 
+
+Asignando aleatoriamente a los individuos al grupo control y tratamiento, podemos crear una distribución de remuestreo. En este caso, el valor esperado de la distribución de muestreo debe ser igual al estimando. En este caso tiene un valor de 7.5 y se observa que la media de la distribución de muestreo sí tiene ese valor, por lo tanto es un estimador insesgado. 
+```{r}
+mediaBoot <- function(x){ 
+  # x: variable de interés
+  # n: número de replicaciones bootstrap
+  n <- length(x)
+  muestra_boot <- sample(x, size = n, replace = TRUE)
+  mean(muestra_boot) # replicacion bootstrap de theta_gorro
+}
+treatment_effect <- rerun(10000, mediaBoot(c(omega$y_0-omega$y_1))) %>% flatten_dbl()
+
+meante<-mean(treatment_effect)
+
+as.data.frame(treatment_effect)%>% 
+  ggplot(aes(x=treatment_effect)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "Distribución de Remuestreo")+
+  geom_vline(xintercept = 7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meante, color = "blue")+
+  theme_minimal()
+```
+
+
+### Diseño aleatorio usando bloques:
+
+Tratando de incrementar la eficiencia estadística de nuestro estimador del 
+efecto del tratamiento,podemos implementar otros tipos de diseños. 
+Comenzaremos con el más simple, para posteriormente construir diseños más robustos.
+
+Con el diseño aleatorio por bloques, el objetivo principal es minimizar la variación de
+cada tipo potencial de *outcome*.
+
+Comenzamos con una aleatoriación por bloques dónde dividimos a nuestra población en 
+"vieja" (mayor a la mediana) y "joven". Conformado este grupo de "viejos" y "jóvenes",
+nos aseguramos que la aleatorización sea de tal forma que tengamos el mismo número de 
+jóvenes y viejos tanto en tratamiento y control.
+
+```{r paged.print=TRUE}
+set.seed(seed)
+omega %<>% 
+  mutate(old = ifelse(age>median(age),1,0)) 
+
+omega_block <- randomize(data=omega,
+                         group=c(1,0),
+                         block=omega$old)
+block.omega <- omega
+block.omega$treatment <- factor(omega_block$treatment)
+block.omega %<>% 
+  mutate(outcome=ifelse(treatment==1,y_1, y_0))
+block.omega$treatment=as.factor(block.omega$treatment)
+
+```
+
+```{r results='asis'}
+tablas_balance_omega(block.omega)
+```
+
+```{r, fig.height=4.5, fig.width=4, fig.align='center'}
+balance_graphs(block.omega, 'Balance Check en Observables: Aleatorización por Bloques')
+```
+
+Visualmente, identificamos que nuestra asignación, otra vez, no fue balanceada,
+ni en términos de género, ni en términos de edades promedios por grupos.
+
+### Diseño de pares combinados
+
+Ahora precisaremos un poco más nuestros diseños, con la implementación de tres diseños
+de pares combinados.
+
++ Edad
+
+```{r paged.print=TRUE}
+set.seed(seed)
+omega_pair_age <- randomize(
+  data=omega,
+  group=c(1,0),                        
+  block=omega$age
+  )
+pair_age.omega <- omega
+pair_age.omega$treatment <- factor(omega_pair_age$treatment)
+pair_age.omega %<>% 
+  mutate(outcome=ifelse(treatment==1,y_1, y_0))
+pair_age.omega$treatment=as.factor(pair_age.omega$treatment)
+
+```
+
+Da la casualidad que, por la forma en que se conformaron las muestras, si el
+diseño de aleatorización considera que la edad debe ser un criterio importante
+para aleatorizar, se logra un balance perfecto. Esto, puesto que dentro de cada
+grupo de edad (40, 50 ...) tenemos personas del mismo sexo. Entonces, considerando 
+únicamente estas dos covariadas, resulta que tenemos los
+`contrafactuales` perfectos al interior de cada grupo de edad. 
+
+```{r results='asis'}
+tablas_balance_omega(pair_age.omega)
+```
+
+Corroboramos este balance visualmente.
+
+```{r, fig.height=4.5, fig.width=4, fig.align='center'}
+balance_graphs(pair_age.omega, 'Balance Check en Observables\n Aleatorización por Pares Combinados:Edad')
+```
+
+
++ Sexo
+
+Ahora, consideraremos el diseño de pares combinados, donde nuestra 
+variable de interés es el sexo de los individuos.
+
+```{r paged.print=TRUE}
+set.seed(seed)
+omega_pair_female <- randomize(data=omega,
+                               group=c(1,0), 
+                               block=omega$female)
+pair_female.omega <- omega
+pair_female.omega$treatment <- omega_pair_female$treatment
+pair_female.omega %<>% 
+  mutate(outcome=ifelse(treatment==1,y_1, y_0))
+pair_female.omega$treatment=as.factor(pair_female.omega$treatment)
+```
+
+Observamos que, en este caso, nuevamente hay desbalance en la conformación
+de nuestros grupos.
+
+```{r results='asis'}
+tablas_balance_omega(pair_female.omega)
+```
+
+```{r, fig.height=4.5, fig.width=4, fig.align='center'}
+balance_graphs(pair_female.omega, 'Balance Check en Observables\n Aleatorización por Pares Combinados:Género')
+```
+
++ Gemelos
+
+Finalmente, en búsqueda del `clon perfecto` para cada individuo, identificamos 
+que en la base de datos tenemos cuatro pares de gemelos. Este es un escenario más o menos 
+ideal, puesto que, por definición, los gemelos tienen:
+
++ el mismo sexo
++ la misma edad.
+
+Por ello, en la última aleatorización, nos encargamos de asegurar que exista un
+gemelo en cada grupo.
+
+```{r paged.print=TRUE}
+set.seed(seed)
+pair_twins.omega<-data.table(omega)
+pair_twins.omega<-pair_twins.omega[,treatment := sample(.N,.N),by="twins"] %>% as.data.frame()
+pair_twins.omega %<>% 
+  mutate(outcome=ifelse(treatment==1,y_1, y_0))
+pair_twins.omega$treatment=as.factor(pair_twins.omega$treatment)
+```
+
+
+Otra vez, observamos que tenemos un balance perfecto entre las covariadas medidas
+previo al tratamiento.
+
+```{r, fig.height=4.5, fig.width=4, fig.align='center'}
+balance_graphs(pair_twins.omega, 'Balance Check en Observables\n Aleatorización por Pares Combinados:Gemelos')
+```
+
+### Más pruebas
+
+Por último, con el `estadístico- F`, verificamos la significancia conjunta de todos
+los coeficentes en la asignación al tratamiento.
+
+$$T_i=X_i'γ+U_i$$, 
+
+donde $X_i$ son las distintas covariadas.
+
+Esperaríamos que, en su conjunto, las covariadas no sean significativas para la 
+definición del tratamiento. 
+
+<div align='center'>
+
+```{r message=FALSE, warning=FALSE, results='asis'}
+# Juntamos todas las aleatorizaciones en una lista
+list_data <- list(complete_rand.omega, 
+                  block.omega,
+                  pair_age.omega, 
+                  pair_female.omega,
+                  pair_twins.omega)
+
+# Significancia conjunta
+significancia_conjunta <- function(data){
+  reg<-lm(factor(treatment) ~ age+ female, data) 
+  return(reg)
+}
+
+# Significancia conjunta para todas las aleatorizaciones
+regs = lapply(list_data, significancia_conjunta)
+
+# Imprimimos en formato bonito
+stargazer(
+  regs[1], 
+  regs[2],
+  regs[3],
+  regs[4],
+  regs[5],
+  type='html',
+  title = "Pruebas de significancia conjunta", 
+  omit.table.layout = "sn",
+  dep.var.labels=c("Tratamiento"),
+  column.labels=c("Completa", "Bloques", "P.Age", "P.Female", "P.Twins"),
+  digits=2,
+  column.sep.width = "10pt"
+  )
+
+```
+
+</div>
+Vemos que, para los casos de aleatorización por pares de gemelos y por edades, 
+los coeficientes asociados a cada una de las covariadas son cero. Para el 
+resto de los casos, los coeficientes son muy cercanos a cero, 
+sugiriendo que se cumple el **supuesto de independencia**:
+
+$${Y_{T_i},Y_{C_i}} ⊥T_{i}$$
+
+Por lo tanto, es factible asumir que la distribución de $Y_{C_i}$ es similar en 
+ambos grupos y se justifica que $E(Y_{Ci}|T_{i}=1)=E(Y_{Ci}|T_{i}=0)$. 
+
+## Diferencia de Medias 
+
+```{r paged.print=TRUE}
+# Diff de medias, Ate readl, Sesgo relativo
+diff.medias <- lapply(list_data, mean_diff_outcomes)
+names_objects <- c("complete_rand", 
+                   "block", 
+                   "pair_age",
+                   "pair_female",
+                   "pair_twins"
+                  )
+names(diff.medias) <- names_objects
+compare_diff <- diff.medias %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  dplyr::rename('Diferencia de Medias'=V1)
+compare_diff$`ATE Real` = rep(ate_real %>% as.numeric, 5)
+compare_diff %>% 
+  mutate(
+    `Sesgo Relativo`= ((`Diferencia de Medias`-`ATE Real`)*100/`ATE Real`))
+```
+
+Como se mencionó en un principio, en este caso hipotético, conocemos los dos posibles 
+outcomes por individuo; esto nos permite conocer que el efecto promedio verdadero del
+tratamiento es -7.5. Con ello, podemos calcular el sesgo relativo de la diferencia de medias
+obtenida con cada diseño de aleatorización, con respecto al $ATE$ real. 
+
+Resulta que los diseños implementados que mantuvieron el balance entre los grupos 
+(diseño de pares combinados de gemelos/edad), son los que tienen el menor sesgo 
+con respecto al ATE real. En el resto de los casos, el sesgo relativo es incluso
+equivalente a 133 por ciento.
+
+## Modelos
+
+Con los diseños anteriores, confirmamos que la etapa del `diseño del experimento` 
+es una etapa crucial para incrementar la probabilidad de que nuestros estimadores
+estén cercanos al valor real del efecto de tratamiento, reduciendo el sesgoy la
+varianza de nuestros estimadores. Sin embargo, aún cuando no tengamos un diseño
+perfecto (o incluso, a pesar de un diseño perfecto), pueden surgir problemas durante
+el análisis de nuestro experimento. Varios son los motivos: como problemas de 
+`non compliance`, atrición, entre otros. Por ello, nuevamente toma relevancia la
+recopilación de datos basales ---`datos recuperados previo al tratamiento`--, 
+pues durante el análisis es recomendable incluirlos como controles, para evitar
+posibles problemas de sesgos por variables omitidas.
+ 
+Verificamos lo previamente comentado, implementando distintas especificaciones
+y observando el estimador asociado al tratamiento y su desviación estándar. 
+
+> Nota: Para todos las implementaciones a continuación, por insuficiencia 
+de conocimiento del tema, utilizamos las `prioris default de Stan`.
+
+### Regresión del indicador de tratamiento y la edad
+$$Y= \beta_0+ \beta_1 Tratamiento+\beta_2 Age +U_i$$ 
+
+
+Con esta primera especificación, se busca capturar el efecto de la edad (independiente
+al tratamiento) sobre el *outcome observado*.
+
+```{r}
+# First models
+first_models <-pblapply(list_data, first_model_omega)
+names(first_models) <- names_objects
+lapply(first_models, summary)
+```
+
+```{r}
+lapply(first_models, mcmc_areas)
+```
+
+En todos los casos vemos que, controlando por age, el coeficiente asociado a treatment 
+se asemeja más al efecto promedio real del tratamiento.
+
+### Regresión del indicador de tratamiento, edad y sexo
+
+Luego, incluimos un control más a nuestras especificaciones: sexo. Con esto se busca
+capturar diferencias intrínsecas entre las mujeres y hombres sobre el outcome, 
+independientemente del tratamiento.
+
+$$Y= \beta_0+ \beta_1 Tratamiento+\beta_2 Age+\beta_3 Female  +U_i$$ 
+```{r}
+# Second models
+second_models <-pblapply(list_data, second_model_omega)
+names(second_models) <- names_objects
+lapply(second_models, summary)
+lapply(second_models, mcmc_areas)
+```
+
+Otra vez, controlando por sexo, los coeficientes asociados al treatment 
+se asemejan más al efecto promedio real del tratamiento; la eficiencia de nuestro
+estimador también aumenta.
+
+
+### Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento
+$\times$ sexo.
+
+Finalmente, procedemos a incluir otro control más a nuestra especificación: 
+Treatment*Female.
+
+Con esta inclusión se espera capturar el efecto promedio del tratamiento, 
+condicional a ser mujer,con respecto al efecto promedio del tratamiento, 
+condicional a ser hombre.
+
+$$Y= \beta_0+ \beta_1 Tratamiento+\beta_2 Age + \beta_3 Female +\beta_4 Tratamiento*Female + U_i$$ 
+
+
+
+```{r}
+# Third models
+third_models <-pblapply(list_data, third_model_omega)
+names(third_models) <- names_objects
+lapply(third_models, summary)
+lapply(third_models, mcmc_areas)
+```
+
+Vemos que con éstas últimas especificaciones, el estimador es sospechosamente preciso:
+con un sd equivalente a cero! Este tipo de resultados, siempre deben tomarse con cautela, 
+más aún considerando que en este caso contamos con solo ocho observaciones.
+
+### Capacidad predictiva de los modelos
+
+Ahora, nos interesa corroborar cuál es el modelo con el mejor modelo predictivo.
+
+```{r paged.print=TRUE}
+# Function to correct problematic k's
+loos_corrected <- function(fit){
+    # Refit del modelo, una vez por cada observación problemática.
+    # Los resultados son combinados con los cálculos de LOO 
+    # previamente hechas ara las observaciones sin valores 
+    # k problemáticos.
+  loo_est <- loo(fit, cores=CORES)
+  if (any(pareto_k_values(loo_est) > 0.7)) {
+  loo_est <- loo(fit, k_threshold = 0.7, cores= CORES)
+  }
+  return(loo_est)
+}
+
+# Loos
+first_models_loos<-pblapply(first_models, loos_corrected)
+second_models_loos<-pblapply(second_models, loos_corrected)
+third_models_loos<-pblapply(third_models, loos_corrected)
+
+# Renaming models
+model1_names <- paste("1", names_objects, sep=".")
+model2_names <- paste("2", names_objects, sep=".")
+model3_names <- paste("3", names_objects, sep=".")
+names(first_models_loos) <- model1_names
+names(second_models_loos) <- model2_names
+names(third_models_loos) <- model3_names
+
+# Comparing all models
+comparing_models <- loo_compare(
+  c(first_models_loos,
+    second_models_loos,
+    third_models_loos
+    )
+  ) %>% as.data.frame()
+comparing_models 
+```
+
+Como se observa, los modelos con mayor capacidad predictiva, independientemente
+del método de aleatorización implementado, son aquellos que durante la etapa 
+del análisis contemplan como controles: `age`, `female` y la
+interacción entre `treatment*female`.
+
+Esto nos muestra la importancia del levantamiento de datos basales, puesto que,
+incluso ante una aleatorización no tan balanceada, es plausible obtener estimadores 
+`insesgados` y eficientes si se incorporan como controles durante el
+análisis.
+
+# Inferencia Causal y Modelos de Regresión: Vacas 
+
+Para este último ejercicio, emplearemos los datos de `vacas.txt`, mismo que contiene
+datos de un experimento que se llevó a cabo con $50$ vacas para estimar el efecto de un
+complemento alimenticio en `6` resultados relacionados con la cantidad de grasa
+láctea producida por cada vaca. 
+
+```{r paged.print=TRUE}
+vacas <- read_delim("vacas.txt", delim = " ")
+vacas <- mutate_all(vacas, function(x) as.numeric(as.character(x)))
+vacas %<>% 
+  mutate(milk.fat=milk*fat)
+vacas
+```
+
+Se consideraron cuatro dietas (tratamientos),
 correspondientes a diferentes niveles del complemento, y se registraron tres
-variables antes de la asignación del tratamiento: número de lactancia
-(temporadas de lactancia), edad y peso inicial de la vaca.
+variables antes de la asignación del tratamiento: 
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+**Definición del experimento**
+
++ Tratamiento: Dietas correspondientes a diferentes niveles del complemento. Dado 
+por la variable `level`;
++ + Grupo de control: level=0 
++ + Grupos de tratamiento: level=0.1 o level:0.2, level=0.3
+
+**Variables levantadas antes del tratamiento**
+
+ + lactation: número de veces que la vaca ha lactado
+ + temporadas de lactancia
+ + age: edad de la vaca (meses)
+ + initial.weight: peso inicial de la vaca (libras)
+
+**Variables medidas después de tratamiento**
+
++ dry:  promedio diario de materia seca consumida por la vaca (en kilogramos)
++ milk:  promedio diario de producto lacteo producido
++ fat:  porcentaje de grasa en la leche
++ milk.fat:  grasa láctea media diaria
+
+</div>
 
 Las vacas se asignaron inicialmente a tratamientos completamente al azar, y
 después se revisaron las distribuciones de las tres covariables para verificar
 el equilibrio a lo largo de los grupos de tratamiento. Se probaron varias
 aleatorizaciones, y la que produjo el "mejor" equilibrio con respecto a las tres
-covariables fue la que se escogió. El tratamiento depende sólo de las
-covariables completamente observadas y no de las no registradas como el aspecto
-físico de las vacas o los momentos en los que vacas entraron en el estudio. Esto
+covariables fue la que se escogió.
+
+El tratamiento depende sólo de las covariables completamente observadas y no de
+las no registradas como el aspecto físico de las vacas o los momentos en 
+los que vacas entraron en el estudio. Esto
 es porque las decisiones de volver a aleatorizar no son explicados.
 Consideraremos diferentes estimaciones del efecto del complemento en la grasa
 láctea media diaria producida.
 
-a) Considera la regresión massimple de la grasa láctea media diaria con el nivel
-de complemento. Calcula el efecto del tratamiento estimado (coeficiente de
-regresión) y el error estándar, y explica por qué este no es un análisis
-completamente apropiado dada la aleatorización utilizada.
+## Revisión de balance en la asignación
 
-b) Agrega más predictores al modelo. Explica el razonamiento para la elección de
-covariables en el modelo. Compare el efecto estimado del tratamiento con el
-resultado de (a).
+```{r}
+tablas_balance_vacas <- function(data){
+  # Verificando balance en asignación
+data <- subset(data, select=c("lactation",
+                              "age",
+                              "initial.weight",
+                              "level"
+                               ))
+data %<>% 
+  dplyr::rename('Asignación: Complementos'=level)
+labs <- c('Número de lactancias',
+          'Edad',
+          'Peso Inicial')
+table_balance <-st(data, 
+                   group = 'Asignación: Complementos',
+                   summ = list(
+                     c('notNA(x)','mean(x)')),
+                   summ.names = list(
+                     c('N','Porcentaje')
+                   ),
+                   labels =labs,
+                   group.test = TRUE,
+                   fit.page = TRUE)  
+                  
+return(table_balance)  
+}
+```
 
-c) Repite (b), esta vez considerando el nivel del complemento como un predictor
-categórico con cuatro niveles. Haga una gráfica que muestre la estimación (y el
-error estándar) del efecto del tratamiento en cada nivel, y también mostrando la
-inferencia del modelo ajustado en (b).
+Dada la explicación de la aleatorización y asignación a los distintos niveles de 
+complementos, resulta necesario revisar el balance de la muestra en las tres 
+covariadas --medidas previo al tratamiento:
+
++ Edad de la vaca
++ Número de veces que la vaca ha lactado
++ Peso inicial
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "lightblue">
+
+En la tabla siguiente se presentan las características observables de las
+vacas, previo al tratamiento. Observamos que las características de las vacas, agrupadas 
+por las asignaciones a distintos niveles de complemento (0, 0.1, 0.2 y 0.3) son distintas.
+De hecho, los tres test de diferencias de medias (correspondientes a las tres variables
+medidas previa al tratamiento) indican que las diferencias entre los cuatro grupos, condicionadas 
+a cada una de estas tres covariadas, son estadísticamente
+significativas. **Esto sugiere que hay un grande de desbalance en la muestra**.
+
+</div>
+
+
+```{r, results='asis'}
+tablas_balance_vacas(vacas)
+```
+
+
+## Modelos
+
+### El tratamiento como único predictor
+
+Primero, calculamos el efecto del tratamiento sobre la grasa láctea media diaria 
+(y su error estándar), dada por un solo regresor, sin ninguna covariable: `nivel de complemento`.
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "lightblue">
+
+**Advertencia:** Los resultados de esta implementación deben ser tomados con cautela, puesto que, el desbalance identificado, junto con la dudosa evidencia de aleatorización que tenemos sobre la conformación de los grupos, nos sugieren que este tipo de análisis --donde el único predictor es el `tratamiento`--no es apropiado; ello porque las diferencias iniciales entre los grupos nos podrían llevar a problemas de **sesgo por variables omitidas**.
+
+</div>
+
+```{r}
+cows_a = stan_glm(
+  milk.fat ~ level,
+  data = vacas,
+  refresh = 0,
+  iter = 1000,
+  seed=seed
+  )
+summary(cows_a)
+```
+Los intervalos de probabilidad nos muestran un intercepto que no refleja los datos observados, cundo nuestro mínimo valor observado en los datos es de 152 para una vaca perteneciente a level 0.2
+
+```{r}
+posterior_interval(cows_a, prob = 0.89)
+```
+
+
+
+
+### Inclusión de más predictores: asumiendo el desbalance de la muestra
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "lightblue">
+En la sección anterior, criticamos la supuesta aleatorización empleada durante la asignación 
+de las vacas a los distintos grupos de tratamiento. Sin embargo, dado que la "aleatorización"
+ya ocurrió, lo único que podemos hacer para estimar el efecto de tratamiento promedio real 
+--además de sugerirles considerar otro diseño de aleatorización más apropiado para la siguiente
+ocasión (como un diseño depares combinados o por bloques)-- es controlar los efectos del 
+tratamiento por las distintas covariables levantadas previo al tratamiento. Esto nos
+permitirá mitigar el posible desequilibrio en las covariables relevantes durante la
+"aleatorización" original.
+
+</div>
+
+```{r}
+cows_b = stan_glm(
+  milk.fat ~ level + lactation + age + initial.weight, 
+  data = vacas,
+  refresh = 0,
+  iter = 1000,
+  seed=seed
+  )
+summary(cows_b)
+```
+
+Sumandole todas las covariables a este modelo los resultaods del modelo son menos alentadores ya que el intercepto no muestra una tendenica clara porque como vemos contiene al cero.
+```{r}
+posterior_interval(cows_b, prob = 0.89)
+```
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "lightblue">
+
+Vemos que, en comparación con la estimación inicial, dónde el único predictor era el
+tratamiento, ahora la estimación puntual del efecto promedio del tratamiento es menor: 107.7;
+además, el error estándar asociado a esta estimación puntual es menor. 
+Esto sugiere que nuestro estimador del `ATE` es más **eficiente**.
+ 
+</div>
+
+### Nivel del complemento como un predictor categórico de cuatro niveles
+
+<style>
+div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
+</style>
+En las secciones anteriores, consideramos al nivel del complemento como un
+predictor numérico; ahora, lo consideraremos como un predictor categórico.
+</div>
+
+
+> Gráfica de la estimación (y el
+error estándar) del efecto del tratamiento en cada nivel, junto con la
+inferencia del modelo ajustado la sección previa.
+
+```{r}
+vacas %<>%
+  mutate(level=(factor(level)))
+cows_c = stan_lmer(milk.fat ~ (1|level) + dry, 
+                  data = vacas,
+                  refresh = 0,
+                  iter =1000,
+                  seed=seed
+                  )
+summary(cows_c)
+```
+
+Se muestra que para todos los niveles tomados como factor una mejor captación de la tendencia de los datos, dado que ninguno presenta poblemas con el cero.
+```{r}
+posterior_interval(cows_c, prob = 0.89)
+```
+
+
+
+```{r}
+pp_check(cows_c, plotfun = "dens_overlay")
+```
+### Distribución posterior de los coeficientes
+```{r}
+models4_mixed <-list(cows_b, cows_c)
+names(models4_mixed)<- c("Treatment as Numeric", "Treatment as Categoric")
+lapply(models4_mixed,mcmc_areas, prob_outer=0.99)
+```
+
+```{r}
+cows_c %>%
+  spread_draws(b[,level]) %>%
+  compare_levels(b, by = level) %>%
+  ungroup() %>%
+  mutate(level = reorder(level, b)) %>%
+  ggplot(aes(y = level, x = b)) +
+  stat_halfeye() +
+  geom_vline(xintercept = 0, linetype = "dashed") 
+```
