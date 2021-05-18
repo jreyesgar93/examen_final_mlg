@@ -1764,8 +1764,9 @@ cows_a = stan_glm(
   )
 summary(cows_a)
 ```
-Los intervalos de probabilidad nos muestran un intercepto que no refleja los datos observados, cundo nuestro mínimo valor observado en los datos es de 152 para una vaca perteneciente a level 0.2
 
+
+Los intervalos de probabilidad nos muestran un intercepto que no refleja los datos observados, cuando nuestro mínimo valor observado en los datos es de 130 para una vaca que pertenece a level 0.2.
 ```{r}
 posterior_interval(cows_a, prob = 0.89)
 ```
@@ -1801,7 +1802,7 @@ cows_b = stan_glm(
 summary(cows_b)
 ```
 
-Sumandole todas las covariables a este modelo los resultaods del modelo son menos alentadores ya que el intercepto no muestra una tendenica clara porque como vemos contiene al cero.
+Sumandole todas las covariables a este modelo los resultaods del modelo son menos alentadores ya que el intercepto no muestra una tendenica clara porque porque como vemos contiene al cero.
 ```{r}
 posterior_interval(cows_b, prob = 0.89)
 ```
@@ -1844,12 +1845,10 @@ cows_c = stan_lmer(milk.fat ~ (1|level) + dry,
 summary(cows_c)
 ```
 
-Se muestra que para todos los niveles tomados como factor una mejor captación de la tendencia de los datos, dado que ninguno presenta poblemas con el cero.
+Se muestra que para un modelo con todos los niveles tomados como factor una mejor capacidad predictiva con un sigma un poco menor al modelo anterior pero todos los *levels* siguen muestrando poblemas con el cero. 
 ```{r}
 posterior_interval(cows_c, prob = 0.89)
 ```
-
-
 
 ```{r}
 pp_check(cows_c, plotfun = "dens_overlay")
@@ -1871,3 +1870,4 @@ cows_c %>%
   stat_halfeye() +
   geom_vline(xintercept = 0, linetype = "dashed") 
 ```
+
