@@ -135,7 +135,7 @@ $$
 p_i = \textsf{logit}^{-1}(\alpha + \beta_P P_i + \beta_V V_i + \beta_A A_i)
 $$
 Podemos interpretar el signo de los coeficientes el aumento o disminución de
-la probabilidad de éxito de un robo. Aplicando la liga inversa al intercepto, nos indica la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un aguila victima de tamaño grande. Si un intento tiene estas características, tendrá una distribución posterior de probabilidad de éxito con media 0.768. Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beat_A$ lo que implica que si existe un aguila pirata peque;a o el aguila victima es inmadura, entonces se reducia la probabilidad de una pesca exitosa. En cambio, si el aguila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
+la probabilidad de éxito de un robo. Aplicando la liga inversa al intercepto, nos indica la probabilidad de éxito en un águila pirata de edad adulta, tamaño grande y con un águila victima de tamaño grande. Si un intento tiene estas características, tendrá una distribución posterior de probabilidad de éxito con media 0.768. Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beat_A$ lo que implica que si existe un águila pirata pequeña o el águila victima es inmadura, entonces se reducirá la probabilidad de una pesca exitosa. En cambio, si el águila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logit inversa del intercepto. 
 
 
 Además, al obtener los intervalos posteriores de incertidumbre de los parámetros al 89%, se observa que ningún valor incluye el cero, por lo que podemos afirmar que los valores son significativos para el modelo. 
@@ -168,12 +168,12 @@ Dada éstas carácteríticas, la distribución posterior de probabilidad de éxi
 una media equivalente a $0.7532669$. 
 
 
-Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beta_A$ lo que implica que si existe un águila pirata pequeña o el águila victima es inmadura, entonces se reducia la probabilidad de una pesca exitosa. En cambio, si el aguila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Sin embargo, se puede dar un cambio aproximado al dividir entre 4, por lo tanto, tenemos una reducción aproximada del 80% si el águila pirata es pequeña, un aumento del 81% si el águila es victima es pequeña y una reducción del 25% si el águila es inmadura.  Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
+Observamos un signo negativo en el coeficiente de $\beta_p$ y $\beta_A$ lo que implica que si existe un águila pirata pequeña o el águila victima es inmadura, entonces se reducirá la probabilidad de una pesca exitosa. En cambio, si el águila victima es de tamaño pequeño, la probabilidad de exito incrementa. Como la funcion logit no es lineal, no es posible determinar en cuanto exactamente aumenta o reduce la probabilidad, ya que depende de los valores del resto de las variables. Sin embargo, se puede dar un cambio aproximado al dividir entre 4, por lo tanto, tenemos una reducción aproximada del 80% si el águila pirata es pequeña, un aumento del 81% si el águila es victima es pequeña y una reducción del 25% si el águila es inmadura.  Además, al tratarse de variables categóricas binarias, no es posible calcular la probabilidad en las medias, sino solo intepretar la probabilidad dada por la función logitinversa del intercepto. 
 
 
 Además, al obtener los intervalos de alta densidad posteriores de incertidumbre de los parámetros al 89%, se observa que ningún valor incluye el cero, por lo que podemos afirmar que los valores son significativos para el modelo. 
 
-Podríamos suponer que un águila pequeña es más aguil y puede huir facilmente de un águila que busca robarle su pesca. Esta misma agilidad asociada al tamaño del águila aplica para el águila pirata, ya que es más probable que le pueda robar su pesca a otra águila si es de tamaño pequeño. También cuando el águila es inmadura, suponemos tiene menos experiencia y es victima fácil para otras águilas que le buscan robar su presa. 
+Podríamos suponer que un águila pequeña es más ágil y puede huir fácilmente de un águila que busca robarle su pesca. Esta misma agilidad asociada al tamaño del águila aplica para el águila pirata, ya que es más probable que le pueda robar su pesca a otra águila si es de tamaño pequeño. También cuando el águila es inmadura, suponemos tiene menos experiencia y es victima fácil para otras águilas que le buscan robar su presa. 
 
 (b) Luego grafica las predicciones posteriores. Para esto calcula y muestra
 tanto: 1) la predicción de la probabilidad de éxito y su intervalo de
@@ -201,7 +201,7 @@ invlogit(predict(model))*eagles$n
 ppc_stat_grouped( y = eagles$y,yrep =post_pred,group = eagles$group,freq = TRUE)
 ```
 
-Para cada águila, graficamos la prediccion posterior del numero de exitos dados sus predictores al igual que su probabilidad de éxito. El valor resaltado T(y) es el valor real calculado entre número de éxitos entre intentos totales. El primer indicador, la probabilidad de éxito, nos dice si una pesca sera exitosa dados los predictores. El número de exitos representa el numero de éxitos dado el numero de intentos que hizo el águila y el resto de sus predictores. El valor resaltado T(y) es el valor real. Observamos que para cada águila varían tanto su probabilidad de éxito como su número de éxitos, ya que cambian sus predictores. 
+Para cada águila, graficamos la prediccion posterior del número de exitos dados sus predictores al igual que su probabilidad de éxito. El valor resaltado T(y) es el valor real calculado entre número de éxitos entre intentos totales. El primer indicador, la probabilidad de éxito, nos dice si una pesca será exitosa dados los predictores. El número de exitos representa el numero de éxitos dado el número de intentos que hizo el águila y el resto de sus predictores. El valor resaltado T(y) es el valor real. Observamos que para cada águila varían tanto su probabilidad de éxito como su número de éxitos, ya que cambian sus predictores. 
 
 Observamos que las predicciones puntales (distribución posterior evaluado en la media) caen dentro de los intervalos de alta densidad de la distribución posterior, tanto de la probabilidad de éxito como del número de éxitos.
 
@@ -467,9 +467,9 @@ Implementamos dos especificaciones: una que considera como único predictor a la
 variable feminidad y otra que solo considera al intercepto. En ambos casos,
 dado nuestro conocimiento limitado del problema y todo lo relacionado con los
 el fenómeno natural que queremos modelar, utilizamos como distribuciones prioris 
-las default de Stan.
+las default de Stan ya que no contamos con conocimiento previo para poderlas definir adecuadamente. 
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE}
 m_hurricanes_a <- list()
 m_hurricanes_a[[1]] <- stan_glm(
   deaths~femininity,
@@ -583,7 +583,7 @@ utilizando la feminidad.
 $$y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{Femenidad}}, \phi)$$
 
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE}
 n_hurricanes_b <- c('Modelo gamma poisson: con sobre-dispersión')
 m_hurricanes_b <- list()
 m_hurricanes_b[[1]] <- stan_glm(
@@ -656,7 +656,7 @@ div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 En la especificación inicial (modelo poisson simple), al modelar la media, implícitamente
 se modeló la varianza, por la siguiente relación: 
 
-$$E[Y] = Var[Y]$$.
+$$E[Y_i] = Var[Y_i]$$.
 
 Sin embargo, como se demostró en la estadística descriptiva, la distribución de
 las muertes registradas no cumple esa relación, puesto que la media no coincide con la varianza.
@@ -720,7 +720,7 @@ Hurricanes %>%
 
 La estimación para los modelos c.1, c.2 y c.3 se muestran a continuación:
 
-```{r include=FALSE}
+```{r }
 m_hurricanes_c <- list()
 m_hurricanes_c[[1]] <- stan_glm(deaths ~ 1 + femininity + damage_norm_sd + femininity:damage_norm_sd,
                                 data = Hurricanes, 
@@ -772,10 +772,13 @@ daños promedios asociados al huracán, se espera un aumento promedio de
 `r toString(round((exp(as.vector(coef(m_hurricanes_c[[1]])[3]))-1)*100,2))` por ciento
 en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
 feminidad y costos de daños promedio.
-+ $\beta_3$: ceteris paribus, se espera un aumento promedio de 
-`r toString(round((exp(as.vector(coef(m_hurricanes_c[[1]])[3])+as.vector(coef(m_hurricanes_c[[1]])[4]))-1)*100,2))`
-por ciento en el número de muertes; esto, con respecto al caso base: huracanes
-con nombres con femenidad igual a 1 y costos de daños promedio.
++ $\beta_3$: ceteris paribus, cuando el valor de femininidad se encuentra en el promedio de  6.780797,
+y el valor del damage_norm se encuentra por encima de su media, entonces habrá un efecto positivo en el número de muertes.
+Si damage_norm se encuentra una desviación estandar por encima de su media, el efecto de esta interaccion será de 
+`r toString(as.vector(coef(m_hurricanes_c[[1]])[4]*mean(Hurricanes$femininity))))` muertes adicionales. En caso de que damage_norm
+se encuentre una desviación estandar por debajo de su media, tendrá un efecto negativo en la misma magnitud. 
+
+
 
 > Modelo con interacción entre femininity y min_pressure_sd (c.2)
 
@@ -792,10 +795,14 @@ del huracán, se espera una reducción promedio de
 `r toString(round((exp(as.vector(coef(m_hurricanes_c[[2]])[3]))-1)*100,2))` por ciento
 en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
 feminidad e intensidad promedio.
-+ $\beta_3$: ceteris paribus, se espera una reducción promedio de 
-`r toString(round((exp(as.vector(coef(m_hurricanes_c[[2]])[3])+as.vector(coef(m_hurricanes_c[[2]])[4]))-1)*100,2))`
-por ciento en el número de muertes; esto, con respecto al caso base: huracanes
-con nombres con femenidad igual a 1 e intensidad promedio.
++ $\beta_3$: ceteris paribus, cuando el valor de femininidad se encuentra en el promedio de  6.780797,
+y el valor del min_pressure se encuentra por encima de su media, entonces habrá un efecto positivo en el número de muertes.
+Si min_pressure se encuentra una desviación estandar por encima de su media, el efecto de esta interaccion será de 
+`r toString(as.vector(coef(m_hurricanes_c[[2]])[4]*mean(Hurricanes$femininity))))` muertes adicionales. En caso de que min_pressure
+se encuentre una desviación estandar por debajo de su media, tendrá un efecto negativo en la misma magnitud. 
+
+
+
 
 > Modelo con interacción entre  femininity, min_pressure_sd y damage_norm_sd (c.3)
 
@@ -813,11 +820,10 @@ del huracán, se espera una reducción promedio de
 en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
 feminidad y costos por daños promedio.
 + $\beta_3$: ceteris paribus, ante un aumento en una desviación estándar en el costo por daños
-promedio, se espera un aumento promedio de
-`r toString(round((exp(as.vector(coef(m_hurricanes_c[[3]])[4]))-1)*100,2))` por ciento
-en el número de muertes; esto, con respecto al caso base: huracanes con nombres con nula 
-feminidad e intensidad promedio.
-
+promedio y min_preassure, se espera una disminución promedio de
+`r toString(as.vector(coef(m_hurricanes_c[[3]])[4]*mean(Hurricanes$femininity))))`muertes. Cuando damage_norm y min_preassure se encuentran
+por debajo de su media, también habrá una disminución en el número de muertes. En caso de que alguno de estos predictores se encuentre por encima de su media y el otro 
+por debajo, entonces tendremos un aumento en el número de muertes. Esto se debe a que por la normalización estos predictores tienen signo contrario, y dado que el coeficiente tiene signo negativo, entonces tendremos un efecto positivo.  
 
 > Probabilidad de los coeficientes
 
@@ -895,7 +901,7 @@ $$y_i \sim \text{Bin Neg}(e^{\beta_0+\beta_1\text{feminidad}+\beta_2\log(\text{d
 \beta_3\text{feminidad} * \log\text{(damage_norm})}, \phi)$$
 
 
-```{r warning=FALSE, include=FALSE}
+```{r warning=FALSE}
 m_hurricanes_d <- list()
 m_hurricanes_d[[1]] <- stan_glm(
   deaths ~ 1 + femininity + log(damage_norm) +
@@ -1011,6 +1017,7 @@ individuo, contamos con ambos resultados potenciales $Y=\{Y_0, Y_1\}$.
 ate_real <- omega %>% 
   mutate(y = y_1 - y_0) %>% 
   summarise(ate_real = mean(y))
+ate_real
 ```
 
 Por ello, contrario a lo que ocurriría en un experimento real, sabemos que el 
@@ -1038,22 +1045,30 @@ div.blue { background-color:#e6f0ff; border-radius: 5px; padding: 20px;}
 
 </div>
 
-Una vez generado cada uno de los diseños, es de nuestro interés verificar
+Para cada uno de los diseños, realizamos los siguientes experimentos.
+
+Obtenemos una asignación aleatoria que cumpla con las condiciones de cada diseño. 
+Es de nuestro interés verificar
 que nuestra aleaterozación fue satisfactoria (en el sentido de independencia);
 para ello,  presentamos distintas tablas de balance; con estas tablas, 
 típicamente se muestra la diferencia en las medias entre tratamiento y 
 control para las distintas covariadas ($X_i$), medidas previo al tratamiento,
 esperando que la mayoría de ellas no sean estadísticamente distintas. 
-Esta tabla va acompañada con una ayuda visual.
+Esta tabla va acompañada con una ayuda visual. Después, realizamos un remuestreo de 200 muestras 
+para otras asignaciónes aleatorias que cumplan con lo los requisitos del diseño. Esperamos que todas las permutaciones posibles para cada diseño sea muestren dentro de nuestra remuestra. Para esto, calculamos la distribución de remuestreo de nuestros estimadores
+de interés, que son diferencia de medias, y coeficientes de la regresión de los 3 modelos solicitados. Para el caso de la regresión utilizamos la función
+lm en lugar de stam_glm ya que el costo computacional es mucho menor y para efectos académicos consideramos que es suficiente. 
 
-Luego, calculamos los efectos promedios del tratamiento, para cada uno
-de los diseño implementados y presentamos los resultados de las 
+Para esta sección también mostramos una tabla con las medias de la distribución de remuestreo para cada estimador y su sesgo relativo. 
+
+
+Una vez generado cada uno de los diseños (Muestra original sin remuestreo), 
+presentamos los resultados de las 
 siguientes especificaciones:
-
++ Diferencia de Medias
 + Regresión del indicador de tratamiento y la edad,
 + Regresión del indicador de tratamiento, edad y sexo,
-+ Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento
-$\times$ sexo.
++ Regresión del indicador de tratamiento, edad, sexo e interacción tratamiento$\times$ sexo.
 
 ```{r funciones ejercicios 3}
 
@@ -1097,8 +1112,35 @@ third_model_omega <- function(my_data){
     outcome ~ treatment + age + female + female*treatment,
     data = my_data,
     refresh = 0,
-    iter = 5000,
+    iter = 3000,
     seed=seed
+)
+return(model)
+}
+
+first_model_omega_lm <- function(my_data){
+  # Primera especificación: indicador de tratamiento y la edad
+  model <- lm(
+    outcome ~ treatment+age,
+    data = my_data
+  )
+return(model)
+}
+
+second_model_omega_lm <- function(my_data){
+  # Segunda especificación: indicador de tratamiento, edad y sexo
+  model <- lm(
+    outcome ~ treatment+age+female,
+    data = my_data
+  )
+return(model)
+}
+
+third_model_omega_lm <- function(my_data){
+  # Tercera especificación : indicador de tratamiento, edad, sexo e interacción 
+  model <-lm(
+    outcome ~ treatment + age + female + female*treatment,
+    data = my_data
 )
 return(model)
 }
@@ -1228,28 +1270,103 @@ balance_graphs(complete_rand.omega, 'Balance Check en Observables: Completa Alea
 ```
 ### Remuestreo Aleatorio 
 
-Asignando aleatoriamente a los individuos al grupo control y tratamiento, podemos crear una distribución de remuestreo. En este caso, el valor esperado de la distribución de muestreo debe ser igual al estimando. En este caso tiene un valor de 7.5 y se observa que la media de la distribución de muestreo sí tiene ese valor, por lo tanto es un estimador insesgado. 
-```{r}
-mediaBoot <- function(x){ 
-  # x: variable de interés
-  # n: número de replicaciones bootstrap
-  n <- length(x)
-  muestra_boot <- sample(x, size = n, replace = TRUE)
-  mean(muestra_boot) # replicacion bootstrap de theta_gorro
+```{r paged.print=TRUE}
+
+
+
+
+gen_block<-function(omega){
+complete_rand.omega <- omega %>% 
+  mutate(treatment=sample(rep(c(0,1), length=n())))
+complete_rand.omega %<>% 
+  mutate(outcome=ifelse(treatment==1, y_1, y_0))
+complete_rand.omega$treatment=as.factor(complete_rand.omega$treatment)
+return(complete_rand.omega)
 }
-treatment_effect <- rerun(10000, mediaBoot(c(omega$y_0-omega$y_1))) %>% flatten_dbl()
 
-meante<-mean(treatment_effect)
+mean_d<-c()
+coef_m1<-c()
+coef_m2<-c()
+coef_m3<-c()
+for (i in c(1:200)){
+  df<-gen_block(omega)
+  coef_m1<-c(coef_m1,first_model_omega_lm(df)$coef[[2]])
+  coef_m2<-c(coef_m2,second_model_omega_lm(df)$coef[[2]])
+  coef_m3<-c(coef_m3,third_model_omega_lm(df)$coef[[2]]+third_model_omega_lm(df)$coef[[5]]*mean(as.numeric(as.character(df$female))))
+  
+  df<-df%>%group_by(treatment)%>%summarize(mean(outcome))%>%pivot_wider(names_from = treatment,values_from=`mean(outcome)`)%>%mutate(mean_diff=`1`-`0`)
+  mean_d<-c(mean_d,df$mean_diff[1])
+}
 
-as.data.frame(treatment_effect)%>% 
-  ggplot(aes(x=treatment_effect)) + 
+meante2<-mean(mean_d)
+
+as.data.frame(mean_d)%>% 
+  ggplot(aes(x=mean_d)) + 
   geom_histogram(fill=cbp5[2]) +
-  labs(title = "Distribución de Remuestreo")+
-  geom_vline(xintercept = 7.5, linetype = "dotted", color = "red")+
-  geom_vline(xintercept = meante, color = "blue")+
+  labs(title = "DR-Mean Dif")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meante2, color = "blue")+
   theme_minimal()
+
+
+meanc1<-mean(coef_m1)
+
+as.data.frame(coef_m1)%>% 
+  ggplot(aes(x=coef_m1)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model1")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc1, color = "blue")+
+  theme_minimal()
+
+
+meanc2<-mean(coef_m2)
+
+as.data.frame(coef_m2)%>% 
+  ggplot(aes(x=coef_m2)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model2")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc2, color = "blue")+
+  theme_minimal()
+
+
+meanc3<-mean(coef_m3,na.rm=TRUE)
+
+as.data.frame(coef_m3)%>% 
+  ggplot(aes(x=coef_m3)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model3")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc3, color = "blue")+
+  theme_minimal()
+
+list_data=list(meante2,meanc1,meanc2,meanc3)
+
 ```
 
+
+```{r paged.print=TRUE}
+# Diff de medias, Ate readl, Sesgo relativo
+diff.medias <- lapply(list_data, function(x){x})
+names_objects <- c("Mean Difference",
+                   "Treatment Coef Model 1",
+                   "Treatment Coef Model 2",
+                   "Treatment Coef Model 3"
+                  )
+names(diff.medias) <- names_objects
+compare_diff <- diff.medias %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  dplyr::rename('Medias'=V1)
+compare_diff$`ATE Real` = rep(ate_real %>% as.numeric, 4)
+compare_diff %>% 
+  mutate(
+    `Sesgo Relativo`= ((`Medias`-`ATE Real`)*100/`ATE Real`))
+```
+
+Observamos que la diferencia de medias es aquella que tiene un sesgo relativo mayor, ya que en cada realización de las asignación de tratamiento, puede que la muestra no esté balanceada, por lo tanto no podemos asegurar que el se captura el efecto del tratamiento real. Notamos que al utilizar variables de control o de pre-tratamiento, se corrige dicho sesgo. Notamos que la interacción capta las diferencias por género y logra captar muy bien el efecto del tratamiento.
 
 ### Diseño aleatorio usando bloques:
 
@@ -1281,6 +1398,8 @@ block.omega$treatment=as.factor(block.omega$treatment)
 
 ```
 
+
+
 ```{r results='asis'}
 tablas_balance_omega(block.omega)
 ```
@@ -1291,6 +1410,118 @@ balance_graphs(block.omega, 'Balance Check en Observables: Aleatorización por B
 
 Visualmente, identificamos que nuestra asignación, otra vez, no fue balanceada,
 ni en términos de género, ni en términos de edades promedios por grupos.
+
+
+### Remuestreo Aleatorio
+
+
+```{r paged.print=TRUE}
+
+
+
+
+gen_block<-function(omega){
+omega %<>% 
+  mutate(old = ifelse(age>median(age),1,0)) 
+
+omega_block <- randomize(data=omega,
+                         group=c(1,0),
+                         block=omega$old)
+block.omega <- omega
+block.omega$treatment <- factor(omega_block$treatment)
+block.omega %<>% 
+  mutate(outcome=ifelse(treatment==1,y_1, y_0))
+block.omega$treatment=as.factor(block.omega$treatment)
+return(block.omega)
+}
+
+mean_d<-c()
+
+mean_d<-c()
+coef_m1<-c()
+coef_m2<-c()
+coef_m3<-c()
+for (i in c(1:200)){
+  df<-gen_block(omega)
+  coef_m1<-c(coef_m1,first_model_omega_lm( df)$coef[[2]])
+  coef_m2<-c(coef_m2,second_model_omega_lm( df)$coef[[2]])
+  coef_m3<-c(coef_m3,third_model_omega_lm(df)$coef[[2]]+third_model_omega_lm(df)$coef[[5]]*mean(as.numeric(as.character(df$female))))
+  
+  df<-df%>%group_by(treatment)%>%summarize(mean(outcome))%>%pivot_wider(names_from = treatment,values_from=`mean(outcome)`)%>%mutate(mean_diff=`1`-`0`)
+  mean_d<-c(mean_d,df$mean_diff[1])
+}
+
+meante2<-mean(mean_d)
+
+as.data.frame(mean_d)%>% 
+  ggplot(aes(x=mean_d)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Mean Dif")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meante2, color = "blue")+
+  theme_minimal()
+
+
+meanc1<-mean(coef_m1)
+
+as.data.frame(coef_m1)%>% 
+  ggplot(aes(x=coef_m1)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model1")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc1, color = "blue")+
+  theme_minimal()
+
+
+meanc2<-mean(coef_m2)
+
+as.data.frame(coef_m2)%>% 
+  ggplot(aes(x=coef_m2)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model2")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc2, color = "blue")+
+  theme_minimal()
+
+
+meanc3<-mean(coef_m3,na.rm=TRUE)
+
+as.data.frame(coef_m3)%>% 
+  ggplot(aes(x=coef_m3)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model3")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc3, color = "blue")+
+  theme_minimal()
+
+list_data=list(meante2,meanc1,meanc2,meanc3)
+```
+
+
+```{r paged.print=TRUE}
+# Diff de medias, Ate readl, Sesgo relativo
+diff.medias <- lapply(list_data, function(x){x})
+names_objects <- c("Mean Difference",
+                   "Treatment Coef Model 1",
+                   "Treatment Coef Model 2",
+                   "Treatment Coef Model 3"
+                  )
+names(diff.medias) <- names_objects
+compare_diff <- diff.medias %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  dplyr::rename('Medias'=V1)
+compare_diff$`ATE Real` = rep(ate_real %>% as.numeric, 4)
+compare_diff %>% 
+  mutate(
+    `Sesgo Relativo`= ((`Medias`-`ATE Real`)*100/`ATE Real`))
+```
+
+Observamos que al agrupar por bloques de edad se corrige un poco el el sesgo en la diferencia de medias. Esto se debe a que las asignaciones aleatorias dentro de cada grupo tienden a estar mas balanceadas. Nuevamente las variables de control logran corregir el sesgo causado por la aleatorización desbalanceada. 
+
+
+
 
 ### Diseño de pares combinados
 
@@ -1332,6 +1563,109 @@ balance_graphs(pair_age.omega, 'Balance Check en Observables\n Aleatorización p
 ```
 
 
+### Remuestreo Aleatorio
+
+
+```{r paged.print=TRUE}
+
+
+gen_pair<-function(omega){
+omega_pair_age <- randomize(
+  data=omega,
+  group=c(1,0),                        
+  block=omega$age
+  )
+pair_age.omega <- omega
+pair_age.omega$treatment <- factor(omega_pair_age$treatment)
+pair_age.omega %<>% 
+  mutate(outcome=ifelse(treatment==1,y_1, y_0))
+omega_pair_age$treatment=as.factor(pair_age.omega$treatment)
+return(pair_age.omega )
+}
+
+
+mean_d<-c()
+coef_m1<-c()
+coef_m2<-c()
+coef_m3<-c()
+for (i in c(1:200)){
+  df<-gen_pair(omega)
+  coef_m1<-c(coef_m1,first_model_omega_lm( df)$coef[[2]])
+  coef_m2<-c(coef_m2,second_model_omega_lm( df)$coef[[2]])
+  coef_m3<-c(coef_m3,third_model_omega_lm(df)$coef[[2]]+third_model_omega_lm(df)$coef[[5]]*mean(as.numeric(as.character(df$female))))
+  
+  df<-df%>%group_by(treatment)%>%summarize(mean(outcome))%>%pivot_wider(names_from = treatment,values_from=`mean(outcome)`)%>%mutate(mean_diff=`1`-`0`)
+  mean_d<-c(mean_d,df$mean_diff[1])
+}
+
+meante2<-mean(mean_d)
+
+as.data.frame(mean_d)%>% 
+  ggplot(aes(x=mean_d)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Mean Dif")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meante2, color = "blue")+
+  theme_minimal()
+
+
+meanc1<-mean(coef_m1)
+
+as.data.frame(coef_m1)%>% 
+  ggplot(aes(x=coef_m1)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model1")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc1, color = "blue")+
+  theme_minimal()
+
+
+meanc2<-mean(coef_m2)
+
+as.data.frame(coef_m2)%>% 
+  ggplot(aes(x=coef_m2)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model2")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc2, color = "blue")+
+  theme_minimal()
+
+
+meanc3<-mean(coef_m3,na.rm=TRUE)
+
+as.data.frame(coef_m3)%>% 
+  ggplot(aes(x=coef_m3)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model3")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc3, color = "blue")+
+  theme_minimal()
+list_data=list(meante2,meanc1,meanc2,meanc3)
+```
+
+```{r paged.print=TRUE}
+# Diff de medias, Ate readl, Sesgo relativo
+diff.medias <- lapply(list_data, function(x){x})
+names_objects <- c("Mean Difference",
+                   "Treatment Coef Model 1",
+                   "Treatment Coef Model 2",
+                   "Treatment Coef Model 3"
+                  )
+names(diff.medias) <- names_objects
+compare_diff <- diff.medias %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  dplyr::rename('Medias'=V1)
+compare_diff$`ATE Real` = rep(ate_real %>% as.numeric, 4)
+compare_diff %>% 
+  mutate(
+    `Sesgo Relativo`= ((`Medias`-`ATE Real`)*100/`ATE Real`))
+```
+
+
+La forma en la que están los datos, aleatorizar por edad implica que es aleatorizar por gemelos, por lo que son dos pares idénticos. En este caso tenemos el contrafactual perfecto, por lo que fácilmente podemos captar el efecto del tratamiento. 
+
 + Sexo
 
 Ahora, consideraremos el diseño de pares combinados, donde nuestra 
@@ -1359,6 +1693,110 @@ tablas_balance_omega(pair_female.omega)
 ```{r, fig.height=4.5, fig.width=4, fig.align='center'}
 balance_graphs(pair_female.omega, 'Balance Check en Observables\n Aleatorización por Pares Combinados:Género')
 ```
+
+
+### Remuestreo Aleatorio
+
+
+```{r paged.print=TRUE}
+
+
+gen_pair<-function(omega){
+omega_pair_female <- randomize(data=omega,
+                               group=c(1,0), 
+                               block=omega$female)
+pair_female.omega <- omega
+pair_female.omega$treatment <- omega_pair_female$treatment
+pair_female.omega %<>% 
+  mutate(outcome=ifelse(treatment==1,y_1, y_0))
+pair_female.omega$treatment=as.factor(pair_female.omega$treatment)
+return(pair_female.omega )
+}
+
+
+
+mean_d<-c()
+coef_m1<-c()
+coef_m2<-c()
+coef_m3<-c()
+for (i in c(1:200)){
+  df<-gen_pair(omega)
+  coef_m1<-c(coef_m1,first_model_omega_lm( df)$coef[[2]])
+  coef_m2<-c(coef_m2,second_model_omega_lm( df)$coef[[2]])
+  coef_m3<-c(coef_m3,third_model_omega_lm(df)$coef[[2]]+third_model_omega_lm(df)$coef[[5]]*mean(as.numeric(as.character(df$female))))
+ 
+  df<-df%>%group_by(treatment)%>%summarize(mean(outcome))%>%pivot_wider(names_from = treatment,values_from=`mean(outcome)`)%>%mutate(mean_diff=`1`-`0`)
+  mean_d<-c(mean_d,df$mean_diff[1])
+}
+
+meante2<-mean(mean_d)
+
+as.data.frame(mean_d)%>% 
+  ggplot(aes(x=mean_d)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Mean Dif")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meante2, color = "blue")+
+  theme_minimal()
+
+
+meanc1<-mean(coef_m1)
+
+as.data.frame(coef_m1)%>% 
+  ggplot(aes(x=coef_m1)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model1")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc1, color = "blue")+
+  theme_minimal()
+
+
+meanc2<-mean(coef_m2)
+
+as.data.frame(coef_m2)%>% 
+  ggplot(aes(x=coef_m2)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model2")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc2, color = "blue")+
+  theme_minimal()
+
+
+meanc3<-mean(coef_m3,na.rm=TRUE)
+
+as.data.frame(coef_m3)%>% 
+  ggplot(aes(x=coef_m3)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model3")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc3, color = "blue")+
+  theme_minimal()
+list_data=list(meante2,meanc1,meanc2,meanc3)
+```
+
+```{r paged.print=TRUE}
+# Diff de medias, Ate readl, Sesgo relativo
+diff.medias <- lapply(list_data, function(x){x})
+names_objects <- c("Mean Difference",
+                   "Treatment Coef Model 1",
+                   "Treatment Coef Model 2",
+                   "Treatment Coef Model 3"
+                  )
+names(diff.medias) <- names_objects
+compare_diff <- diff.medias %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  dplyr::rename('Medias'=V1)
+compare_diff$`ATE Real` = rep(ate_real %>% as.numeric, 4)
+compare_diff %>% 
+  mutate(
+    `Sesgo Relativo`= ((`Medias`-`ATE Real`)*100/`ATE Real`))
+```
+
+Al utilizar pares agrupados por sexo, existe un gran sesgo al utilizar el estimador de diferencia de medias. Esto se debe a que hay personas de diferentes edades con el mismo sexo, por lo tanto el efecto del tratamiento es distinto y la asignación dentro de estos pares puede no estar balanceada. Al utilizar variables de control que incluyan sexo, se corrige parte de este sesgo. 
+
+
 
 + Gemelos
 
@@ -1389,7 +1827,111 @@ previo al tratamiento.
 balance_graphs(pair_twins.omega, 'Balance Check en Observables\n Aleatorización por Pares Combinados:Gemelos')
 ```
 
-### Más pruebas
+
+
+
+### Remuestreo Aleatorio
+
+
+```{r paged.print=TRUE}
+
+
+gen_pair<-function(omega){
+pair_twins.omega<-data.table(omega)
+pair_twins.omega<-pair_twins.omega[,treatment := sample(.N,.N),by="twins"] %>% as.data.frame()
+pair_twins.omega %<>% 
+  mutate(outcome=ifelse(treatment==1,y_1, y_0))
+pair_twins.omega$treatment=as.factor(pair_twins.omega$treatment)
+return(pair_twins.omega )
+}
+
+
+mean_d<-c()
+coef_m1<-c()
+coef_m2<-c()
+coef_m3<-c()
+for (i in c(1:200)){
+  df<-gen_pair(omega)
+  coef_m1<-c(coef_m1,first_model_omega_lm( df)$coef[[2]])
+  coef_m2<-c(coef_m2,second_model_omega_lm( df)$coef[[2]])
+  coef_m3<-c(coef_m3,third_model_omega_lm(df)$coef[[2]]+third_model_omega_lm(df)$coef[[5]]*mean(as.numeric(as.character(df$female))))
+ 
+  df<-df%>%group_by(treatment)%>%summarize(mean(outcome))%>%pivot_wider(names_from = treatment,values_from=`mean(outcome)`)%>%mutate(mean_diff=`1`-`0`)
+  mean_d<-c(mean_d,df$mean_diff[1])
+}
+
+meante2<-mean(mean_d)
+
+as.data.frame(mean_d)%>% 
+  ggplot(aes(x=mean_d)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Mean Dif")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meante2, color = "blue")+
+  theme_minimal()
+
+
+meanc1<-mean(coef_m1)
+
+as.data.frame(coef_m1)%>% 
+  ggplot(aes(x=coef_m1)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model1")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc1, color = "blue")+
+  theme_minimal()
+
+
+meanc2<-mean(coef_m2)
+
+as.data.frame(coef_m2)%>% 
+  ggplot(aes(x=coef_m2)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model2")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc2, color = "blue")+
+  theme_minimal()
+
+
+meanc3<-mean(coef_m3,na.rm=TRUE)
+
+as.data.frame(coef_m3)%>% 
+  ggplot(aes(x=coef_m3)) + 
+  geom_histogram(fill=cbp5[2]) +
+  labs(title = "DR-Model3")+
+  geom_vline(xintercept = -7.5, linetype = "dotted", color = "red")+
+  geom_vline(xintercept = meanc3, color = "blue")+
+  theme_minimal()
+list_data=list(meante2,meanc1,meanc2,meanc3)
+```
+
+```{r paged.print=TRUE}
+# Diff de medias, Ate readl, Sesgo relativo
+diff.medias <- lapply(list_data, function(x){x})
+names_objects <- c("Mean Difference",
+                   "Treatment Coef Model 1",
+                   "Treatment Coef Model 2",
+                   "Treatment Coef Model 3"
+                  )
+names(diff.medias) <- names_objects
+compare_diff <- diff.medias %>% 
+  as.data.frame() %>% 
+  t() %>% 
+  as.data.frame() %>% 
+  dplyr::rename('Medias'=V1)
+compare_diff$`ATE Real` = rep(ate_real %>% as.numeric, 4)
+compare_diff %>% 
+  mutate(
+    `Sesgo Relativo`= ((`Medias`-`ATE Real`)*100/`ATE Real`))
+```
+
+
+En este caso, tenemos asignación por gemelos, por lo tanto existe un contrafactual identico y se logra capturar el efecto de tratamiento para cada tipo de modelo de forma correcta. 
+
+
+### Más pruebas (Sobre las muestras originales de cada diseño - sin remuestras)
+
+
 
 Por último, con el `estadístico- F`, verificamos la significancia conjunta de todos
 los coeficentes en la asignación al tratamiento.
@@ -1619,6 +2161,10 @@ incluso ante una aleatorización no tan balanceada, es plausible obtener estimad
 `insesgados` y eficientes si se incorporan como controles durante el
 análisis.
 
+
+Finalmente, vale la pena considerar que si los experimentos antes implementados no fueran datos hipotéticos y estuviéramos interesados en conocer el efecto del omega-3 en la presión arterial, sería recomendable determinar de qué tamaño tendría que ser la muestra para que exista una alta probabilidad de obtener un estimador que nos permita rechazar la hipótesis nula ($H_0: \tau=0$), en favor de la alternativa: $H_1: \tau\neq0$. Dicho cálculo de poder estadístico probablemente nos indicaría que con $N=8$ tendríamos un poder estadístico muy bajo.
+
+
 # Inferencia Causal y Modelos de Regresión: Vacas 
 
 Para este último ejercicio, emplearemos los datos de `vacas.txt`, mismo que contiene
@@ -1766,6 +2312,13 @@ summary(cows_a)
 ```
 
 
+Los intervalos de probabilidad nos muestran un intercepto que no refleja los datos observados, cuando nuestro mínimo valor observado en los datos es de 130 para una vaca que pertenece a level 0.2.
+```{r}
+posterior_interval(cows_a, prob = 0.89)
+```
+
+
+
 
 ### Inclusión de más predictores: asumiendo el desbalance de la muestra
 
@@ -1795,12 +2348,17 @@ cows_b = stan_glm(
 summary(cows_b)
 ```
 
+Sumándole todas las covariables a este modelo los resultados del modelo son menos alentadores ya que el intercepto no muestra una tendencia clara porque como vemos contiene al cero.
+```{r}
+posterior_interval(cows_b, prob = 0.89)
+```
+
 <style>
 div.lightblue { background-color:#bfe2e3; border-radius: 5px; padding: 20px;}
 </style>
 <div class = "lightblue">
 
-Vemos que, en comparación con la estimación inicial, dónde el único predictor era el
+Vemos que, en comparación con la estimación inicial, donde el único predictor era el
 tratamiento, ahora la estimación puntual del efecto promedio del tratamiento es menor: 107.7;
 además, el error estándar asociado a esta estimación puntual es menor. 
 Esto sugiere que nuestro estimador del `ATE` es más **eficiente**.
@@ -1831,8 +2389,12 @@ cows_c = stan_lmer(milk.fat ~ (1|level) + dry,
                   seed=seed
                   )
 summary(cows_c)
-``` 
+```
 
+Se muestra que para un modelo con todos los niveles tomados como factor una mejor capacidad predictiva con un sigma un poco menor al modelo anterior pero todos los *levels* siguen mostrando poblemas con el cero. 
+```{r}
+posterior_interval(cows_c, prob = 0.89)
+```
 
 ```{r}
 pp_check(cows_c, plotfun = "dens_overlay")
@@ -1841,7 +2403,9 @@ pp_check(cows_c, plotfun = "dens_overlay")
 ```{r}
 models4_mixed <-list(cows_b, cows_c)
 names(models4_mixed)<- c("Treatment as Numeric", "Treatment as Categoric")
-lapply(models4_mixed,mcmc_areas, prob_outer=0.99)
+mcmc_areas(models4_mixed[[1]],prob_outer=0.89)
+
+mcmc_areas(models4_mixed[[2]],prob_outer=0.89,pars=c('(Intercept)','dry','b[(Intercept) level:0]','b[(Intercept) level:0.1]','b[(Intercept) level:0.2]','b[(Intercept) level:0.3]','sigma'))
 ```
 
 ```{r}
@@ -1854,3 +2418,16 @@ cows_c %>%
   stat_halfeye() +
   geom_vline(xintercept = 0, linetype = "dashed") 
 ```
+
+En el primer modelo, el coeficiente de levels tiene una dispersión muy grande mientras que los coeficientes de los niveles en el modelo 2 con variables categoricas son mucho mas pequeños. Esto es porque debe captar el efecto de todos los posibles niveles, por lo tanto tendrá más variabilidad. En el caso de la categorica, los valores "dummy" son binarios y tienen menor dispersión por l oque el coeficiente captura menor información. 
+
+```{r, warnings=FALSE}
+loo1<-loo(models4_mixed[[1]])
+loo2<-loo(models4_mixed[[2]])
+
+loo_compare(loo1,loo2)
+
+```
+
+
+En este caso el modelo 1 resulta ligeramente mejor al modelo con el criterio de loo con respecto al modelo 2 que considera un coeficiente para cada nivel de la variable categorica. 
